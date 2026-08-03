@@ -1,35 +1,39 @@
 import { APP_NAME } from "../../theme/appIdentity";
-import { cellAccents, colors } from "../../theme/tokens";
+import markUrl from "../../assets/brand/logo-mark.svg";
+import markSmallUrl from "../../assets/brand/logo-mark-small.svg";
+import horizontalUrl from "../../assets/brand/logo-horizontal.svg";
+import horizontalTaglineUrl from "../../assets/brand/logo-horizontal-with-tagline.svg";
+import monochromeUrl from "../../assets/brand/logo-monochrome.svg";
 
-/**
- * Placeholder logo mark: a rounded square holding three stacked cell bars in
- * the markdown, PHP, and HTTP accents, plus a play triangle.
- */
-export function LogoMark({ size = 28 }: { size?: number }) {
+export type LogoVariant =
+  | "mark"
+  | "markSmall"
+  | "horizontal"
+  | "horizontalTagline"
+  | "monochrome";
+
+const SOURCES: Record<LogoVariant, string> = {
+  mark: markUrl,
+  markSmall: markSmallUrl,
+  horizontal: horizontalUrl,
+  horizontalTagline: horizontalTaglineUrl,
+  monochrome: monochromeUrl,
+};
+
+/** The single component for rendering the brand logo anywhere in the app. */
+export function LogoMark({
+  size = 28,
+  variant = "mark",
+}: {
+  size?: number;
+  variant?: LogoVariant;
+}) {
   return (
-    <svg
-      width={size}
+    <img
+      src={SOURCES[variant]}
       height={size}
-      viewBox="0 0 32 32"
-      role="img"
-      aria-label={`${APP_NAME} logo`}
-    >
-      <rect
-        x="1"
-        y="1"
-        width="30"
-        height="30"
-        rx="7"
-        fill={colors.codeSurface}
-        stroke={colors.border}
-        strokeWidth="1.5"
-      />
-      {/* three stacked cells */}
-      <rect x="7" y="8" width="13" height="4" rx="2" fill={cellAccents.markdown} />
-      <rect x="7" y="14" width="13" height="4" rx="2" fill={cellAccents.php} />
-      <rect x="7" y="20" width="13" height="4" rx="2" fill={cellAccents.http} />
-      {/* play triangle */}
-      <path d="M23 12.5 L28 16 L23 19.5 Z" fill={colors.primary} />
-    </svg>
+      alt={`${APP_NAME} logo`}
+      draggable={false}
+    />
   );
 }

@@ -69,15 +69,40 @@ cell identity.
 
 ## Logo
 
-`src/components/common/LogoMark.tsx` is a deliberate **placeholder**: a rounded
-square containing three stacked executable cells (markdown gray, PHP indigo, HTTP
-teal) plus a small play triangle in the primary color. Constraints:
+Production assets (extracted from the approved concept) are integrated. The mark is
+a rounded tile with three stacked executable cells (markdown gray, PHP indigo, HTTP
+teal) — an original composition, not derivative of the PHP, Laravel, Jupyter, or
+Postman logos.
 
-- Works on dark backgrounds; inline SVG only — **no external image assets**.
-- Original composition — do not copy or imitate the PHP, Laravel, Jupyter, or
-  Postman logos.
-- Replacement plan: swap the SVG internals in that one component; call sites pass
-  only `size` and must not change.
+### Asset locations & usage
+
+| File | Location | Use |
+|------|----------|-----|
+| `logo-mark.svg` | `src/assets/brand/` | Default in-app mark (headers, dialogs) |
+| `logo-mark-small.svg` | `src/assets/brand/` | Tiny sizes (≤20 px) where detail must simplify |
+| `logo-horizontal.svg` | `src/assets/brand/` | Mark + wordmark lockup on dark surfaces (home/about) |
+| `logo-horizontal-with-tagline.svg` | `src/assets/brand/` | Full lockup with tagline, dark surfaces (splash/about) |
+| `logo-monochrome.svg` | `src/assets/brand/` | Single-color contexts on dark backgrounds |
+| `logo-horizontal-with-tagline.png` | `docs/assets/` | README and docs (light-background variant) |
+| `social-preview.png` | `docs/assets/` | Repository social/preview card |
+
+In-app rendering goes through **one component**:
+`src/components/common/LogoMark.tsx` — `<LogoMark variant="mark" size={28} />` with
+variants `mark`, `markSmall`, `horizontal`, `horizontalTagline`, `monochrome`.
+
+### App icon
+
+`src-tauri/icons/` (icon.icns, icon.ico, icon.png, 32x32.png, 128x128.png,
+128x128@2x.png, platform extras) is generated from the approved
+`icon-1024.png` via `bun run tauri icon`. To update the app icon, regenerate the
+whole set from a new 1024 px master — never hand-edit individual sizes.
+`tauri.conf.json` already references this set.
+
+### Rule
+
+Do **not** import logo files or hardcode logo asset paths anywhere outside
+`LogoMark.tsx` (or future brand utilities). Components render brand imagery only
+through `LogoMark`.
 
 ## Hard rules
 

@@ -1,0 +1,22 @@
+[
+  {
+    "status": "ok",
+    "detail": "Docker daemon reachable; PHP image present.",
+    "remedy": ""
+  },
+  {
+    "status": "dockerNotInstalled",
+    "detail": "The docker CLI was not found on PATH.",
+    "remedy": "Install Docker Desktop from https://www.docker.com/products/docker-desktop/ and restart the app."
+  },
+  {
+    "status": "daemonNotRunning",
+    "detail": "The docker CLI exists but the daemon did not respond.",
+    "remedy": "Start Docker Desktop and wait until it reports Running, then try again."
+  },
+  {
+    "status": "imageMissing",
+    "detail": "The PHP runtime image is not present locally.",
+    "remedy": "Pull the PHP image (one-time download, several hundred MB)."
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "status": "terminated",
+  "stdout": "partial output before the limit hit…",
+  "stderr": "",
+  "terminationReason": "timeout",
+  "truncated": true,
+  "durationMs": 30004,
+  "ranAt": "2026-08-03T09:40:00Z"
+}

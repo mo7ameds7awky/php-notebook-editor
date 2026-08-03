@@ -1,0 +1,22 @@
+[
+  {
+    "status": "succeeded",
+    "response": {
+      "statusCode": 500,
+      "headers": [{ "name": "content-type", "value": "text/plain" }],
+      "body": "internal server error",
+      "bodyTruncated": false
+    },
+    "durationMs": 233,
+    "ranAt": "2026-08-03T09:32:00Z"
+  },
+  {
+    "status": "failed",
+    "error": {
+      "kind": "network",
+      "message": "dns error: no such host"
+    },
+    "durationMs": 51,
+    "ranAt": "2026-08-03T09:33:00Z"
+  }
+]

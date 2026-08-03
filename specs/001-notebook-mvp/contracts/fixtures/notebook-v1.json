@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "title": "Welcome Notebook",
+  "cells": [
+    {
+      "id": "cell-md-1",
+      "type": "markdown",
+      "source": "# API scratchpad\n\nNotes about the local API live here."
+    },
+    {
+      "id": "cell-php-1",
+      "type": "php",
+      "source": "<?php\necho \"hello\";",
+      "lastRun": {
+        "status": "succeeded",
+        "stdout": "hello",
+        "stderr": "",
+        "exitCode": 0,
+        "truncated": false,
+        "durationMs": 412,
+        "ranAt": "2026-08-03T09:30:00Z"
+      }
+    },
+    {
+      "id": "cell-http-1",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/get",
+        "headers": [{ "name": "Accept", "value": "application/json" }],
+        "body": "",
+        "timeoutMs": 30000
+      },
+      "lastRun": {
+        "status": "succeeded",
+        "response": {
+          "statusCode": 200,
+          "headers": [{ "name": "content-type", "value": "application/json" }],
+          "body": "{\"ok\":true}",
+          "bodyTruncated": false
+        },
+        "durationMs": 184,
+        "ranAt": "2026-08-03T09:31:00Z"
+      }
+    }
+  ],
+  "envVars": [
+    { "name": "base_url", "value": "https://httpbin.org", "secret": false },
+    { "name": "token", "value": "secret-123", "secret": true }
+  ],
+  "xCustomTool": { "note": "unknown top-level field must survive round-trip" }
+}

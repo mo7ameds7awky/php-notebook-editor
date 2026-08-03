@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://php-notebook-editor.local/schemas/pnb-v1.schema.json",
+  "title": "PHP Notebook file (.pnb.json) — schema version 1",
+  "type": "object",
+  "required": ["schemaVersion", "title", "cells", "envVars"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "cells": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cell" }
+    },
+    "envVars": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/envVar" }
+    }
+  },
+  "$defs": {
+    "cell": {
+      "oneOf": [
+        { "$ref": "#/$defs/markdownCell" },
+        { "$ref": "#/$defs/phpCell" },
+        { "$ref": "#/$defs/httpCell" }
+      ]
+    },
+    "cellId": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "isoTimestamp": { "type": "string", "format": "date-time" },
+    "markdownCell": {
+      "type": "object",
+      "required": ["id", "type", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/cellId" },
+        "type": { "const": "markdown" },
+        "source": { "type": "string" }
+      }
+    },
+    "phpCell": {
+      "type": "object",
+      "required": ["id", "type", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/cellId" },
+        "type": { "const": "php" },
+        "source": { "type": "string" },
+        "lastRun": {
+          "oneOf": [{ "$ref": "#/$defs/phpRunResult" }, { "type": "null" }]
+        }
+      }
+    },
+    "httpCell": {
+      "type": "object",
+      "required": ["id", "type", "request"],
+      "properties": {
+        "id": { "$ref": "#/$defs/cellId" },
+        "type": { "const": "http" },
+        "request": { "$ref": "#/$defs/httpRequestSpec" },
+        "lastRun": {
+          "oneOf": [{ "$ref": "#/$defs/httpRunResult" }, { "type": "null" }]
+        }
+      }
+    },
+    "httpRequestSpec": {
+      "type": "object",
+      "required": ["method", "url", "headers", "body"],
+      "properties": {
+        "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+        "url": { "type": "string" },
+        "headers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nameValue" }
+        },
+        "body": { "type": "string" },
+        "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 300000 }
+      }
+    },
+    "nameValue": {
+      "type": "object",
+      "required": ["name", "value"],
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "envVar": {
+      "type": "object",
+      "required": ["name", "value", "secret"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "value": { "type": "string" },
+        "secret": { "type": "boolean" }
+      }
+    },
+    "phpRunResult": {
+      "type": "object",
+      "required": ["status", "stdout", "stderr", "truncated", "durationMs", "ranAt"],
+      "properties": {
+        "status": { "enum": ["succeeded", "failed", "terminated", "cancelled"] },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" },
+        "exitCode": { "type": ["integer", "null"] },
+        "terminationReason": { "enum": ["timeout", "memory", null] },
+        "truncated": { "type": "boolean" },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "ranAt": { "$ref": "#/$defs/isoTimestamp" }
+      }
+    },
+    "httpRunResult": {
+      "type": "object",
+      "required": ["status", "durationMs", "ranAt"],
+      "properties": {
+        "status": { "enum": ["succeeded", "failed", "cancelled"] },
+        "response": {
+          "oneOf": [{ "$ref": "#/$defs/httpResponseSummary" }, { "type": "null" }]
+        },
+        "error": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["kind", "message"],
+              "properties": {
+                "kind": { "enum": ["network", "timeout", "invalidRequest", "cancelled"] },
+                "message": { "type": "string" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "ranAt": { "$ref": "#/$defs/isoTimestamp" }
+      }
+    },
+    "httpResponseSummary": {
+      "type": "object",
+      "required": ["statusCode", "headers", "body", "bodyTruncated"],
+      "properties": {
+        "statusCode": { "type": "integer", "minimum": 100, "maximum": 599 },
+        "headers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nameValue" }
+        },
+        "body": { "type": "string" },
+        "bodyTruncated": { "type": "boolean" }
+      }
+    }
+  }
+}

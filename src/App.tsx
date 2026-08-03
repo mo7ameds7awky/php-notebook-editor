@@ -1,49 +1,40 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { APP_NAME, APP_TAGLINE } from "./theme/appIdentity";
+import { LogoMark } from "./components/common/LogoMark";
 import "./App.css";
 
+type View = "home" | "notebook";
+
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  // Placeholder view state until the routing store exists.
+  const [view] = useState<View>("home");
+  return view === "home" ? <HomePlaceholder /> : <NotebookPlaceholder />;
+}
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
+function HomePlaceholder() {
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className="app-shell">
+      <header className="app-header">
+        <LogoMark size={32} />
+        <div>
+          <h1 className="app-title">{APP_NAME}</h1>
+          <p className="app-tagline">{APP_TAGLINE}</p>
+        </div>
+      </header>
+      <section className="app-empty">
+        <p>
+          Your notebooks will live here. Creating, opening, and recent notebooks
+          arrive with the first vertical slice.
+        </p>
+      </section>
+    </main>
+  );
+}
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+function NotebookPlaceholder() {
+  return (
+    <main className="app-shell">
+      <p className="app-tagline">Notebook view — arrives with the first vertical slice.</p>
     </main>
   );
 }

@@ -129,3 +129,124 @@ Before running the project, install:
 ## Getting started
 
 ### 1. Clone the repository
+
+```bash
+git clone <repo-url>
+cd php-notebook-editor
+```
+
+### 2. Install dependencies
+
+```bash
+bun install
+```
+
+### 3. Run the desktop app in development mode
+
+```bash
+bun run tauri dev
+```
+
+If everything is working, a desktop window should open with the Tauri + React starter UI.
+
+---
+
+## Common commands
+
+```bash
+# Install dependencies
+bun install
+
+# Run the Tauri desktop app
+bun run tauri dev
+
+# Build the frontend
+bun run build
+
+# Preview frontend build
+bun run preview
+
+# Build desktop app
+bun run tauri build
+```
+
+---
+
+## MVP scope
+
+The first usable MVP should include:
+
+- Tauri desktop shell
+- React + TypeScript notebook UI
+- Bun-based development workflow
+- Create notebook
+- Open notebook
+- Save notebook
+- Recent notebooks list
+- Local `.pnb.json` notebook files
+- Markdown cells
+- PHP code cells
+- HTTP request cells
+- Basic environment variables
+- Docker-based isolated PHP execution
+- Basic project folder detection
+- Runtime health checks for Docker/PHP availability
+
+---
+
+## Out of scope for MVP
+
+The following features are intentionally postponed:
+
+- Cloud sync
+- Real-time collaboration
+- AI assistant
+- Laravel in-app package mode
+- Production arbitrary code execution
+- Full IDE replacement
+- Full Postman/Insomnia replacement
+- Advanced debugger
+- App signing
+- Auto-updates
+- Marketplace distribution polish
+
+---
+
+## Security model
+
+This project involves executing user-written PHP code, so security is a core design concern.
+
+### Non-negotiable rules
+
+- Do **not** execute arbitrary PHP using `eval` inside the Tauri/Rust process.
+- Do **not** execute arbitrary PHP inside the main desktop app process.
+- PHP snippets should run inside Docker or another isolated runtime.
+- Execution must have timeouts.
+- Execution should have memory limits.
+- The full host filesystem should not be mounted by default.
+- Network access should be explicit/configurable.
+- Secrets should be masked in the UI.
+- Logs should avoid printing secret values.
+
+---
+
+## First implementation tasks
+
+Recommended order:
+
+1. Finalize project structure.
+2. Define `.pnb.json` notebook schema.
+3. Implement notebook create/open/save.
+4. Build cell editor UI.
+5. Implement Markdown preview.
+6. Implement HTTP request cells.
+7. Implement Docker PHP execution.
+8. Add environment variables.
+9. Add project folder detection.
+10. Create example notebooks.
+
+---
+
+## Author
+
+Created by Mohamed Shawky.

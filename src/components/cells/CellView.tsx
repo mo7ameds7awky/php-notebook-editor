@@ -1,5 +1,8 @@
+import { useState } from "react";
 import type { Cell } from "../../types/notebook";
 import { useNotebookStore } from "../../state/notebookStore";
+import { describeError, type UserFacingError } from "../../lib/errors";
+import { ErrorDialog } from "../common/ErrorDialog";
 import { CellFrame } from "./CellFrame";
 import { MarkdownCell } from "./MarkdownCell";
 import { PhpCell } from "./PhpCell";
@@ -17,6 +20,11 @@ export function CellView({ cell, index, count, onRequestDelete }: CellViewProps)
   const moveCell = useNotebookStore((s) => s.moveCell);
   const updateCellSource = useNotebookStore((s) => s.updateCellSource);
   const updateHttpRequest = useNotebookStore((s) => s.updateHttpRequest);
+  const startHttpRun = useNotebookStore((s) => s.startHttpRun);
+  const cancelCellRun = useNotebookStore((s) => s.cancelCellRun);
+  const running = useNotebookStore((s) => s.cellRuns[cell.id] !== undefined);
+
+  const [runError, setRunError] = useState<UserFacingError | null>(null);
 
   function body() {
     switch (cell.type) {
@@ -27,7 +35,15 @@ export function CellView({ cell, index, count, onRequestDelete }: CellViewProps)
       case "php":
         return <PhpCell cell={cell} onChangeSource={(s) => updateCellSource(cell.id, s)} />;
       case "http":
-        return <HttpCell cell={cell} onChangeRequest={(r) => updateHttpRequest(cell.id, r)} />;
+        return (
+          <HttpCell
+            cell={cell}
+            onChangeRequest={(r) => updateHttpRequest(cell.id, r)}
+            running={running}
+            onRun={() => void startHttpRun(cell.id).catch((e) => setRunError(describeError(e)))}
+            onCancel={() => cancelCellRun(cell.id)}
+          />
+        );
       default: {
         const exhaustive: never = cell;
         return exhaustive;
@@ -45,6 +61,7 @@ export function CellView({ cell, index, count, onRequestDelete }: CellViewProps)
       onDelete={() => onRequestDelete(cell.id)}
     >
       {body()}
+      <ErrorDialog error={runError} onClose={() => setRunError(null)} />
     </CellFrame>
   );
 }

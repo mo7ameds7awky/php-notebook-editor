@@ -193,6 +193,25 @@ pub struct CommandError {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadNotebookResult {
+    pub notebook: Notebook,
+    pub file_mtime_ms: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveNotebookResult {
+    pub file_mtime_ms: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ListRecentsResult {
+    pub entries: Vec<RecentEntry>,
+}
+
 impl CommandError {
     pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
         Self {

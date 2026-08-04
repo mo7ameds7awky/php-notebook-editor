@@ -30,6 +30,18 @@ describe("parseCurlCommand — basics", () => {
     expect(result.request.body).toBe('{"name":"pnb"}');
   });
 
+  it("preserves {{name}} placeholders in url, headers, and body untouched", () => {
+    const result = expectOk(
+      `curl -X POST '{{base_url}}/login' -H 'Authorization: Bearer {{token}}' -d '{"t":"{{token}}"}'`,
+    );
+    expect(result.request.url).toBe("{{base_url}}/login");
+    expect(result.request.headers).toContainEqual({
+      name: "Authorization",
+      value: "Bearer {{token}}",
+    });
+    expect(result.request.body).toBe('{"t":"{{token}}"}');
+  });
+
   it("defaults to POST when data is present without -X", () => {
     const result = expectOk("curl https://x.test -d 'a=1'");
     expect(result.request.method).toBe("POST");

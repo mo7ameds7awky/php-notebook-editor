@@ -93,7 +93,7 @@ Each story phase is independently completable and demoable.
 - [x] T030 [P] [US2] Markdown cell in `src/components/cells/MarkdownCell.tsx`: edit (CodeEditor markdown) / preview toggle rendering `react-markdown` + `remark-gfm` + `rehype-sanitize`, no raw HTML pass-through; component test `src/components/cells/MarkdownCell.test.tsx` asserting `<script>alert(1)</script>` renders inert text and GFM tables render (FR-012); styled with Tailwind semantic utilities + common primitives
 - [x] T031 [P] [US2] PHP cell authoring in `src/components/cells/PhpCell.tsx`: CodeEditor php mode + empty result placeholder (run arrives in US5); authoring/saving independent of runtime per FR-030; Tailwind semantic utilities + `Panel`/`Badge` primitives
 - [x] T032 [P] [US2] HTTP cell authoring in `src/components/cells/HttpCell.tsx`: method select (GET/POST/PUT/PATCH/DELETE), URL input, headers name/value row editor, body CodeEditor, timeout field defaulting 30 s (FR-019); Tailwind semantic utilities + `Button`/`Badge` primitives
-- [ ] T033 [US2] CHECKPOINT: execute quickstart.md §US2 scenarios 1–5 manually; SC-002 round-trip diff clean → story done
+- [x] T033 [US2] CHECKPOINT: execute quickstart.md §US2 scenarios 1–5 manually; SC-002 round-trip diff clean → story done
 
 **Checkpoint**: Notebooks are fully authorable documents
 

@@ -3,7 +3,7 @@ import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { ArrowLeft } from "lucide-react";
 import { LogoMark } from "../common/LogoMark";
 import { Button } from "../common/Button";
-import { Panel } from "../common/Panel";
+import { CellList } from "./CellList";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorDialog } from "../common/ErrorDialog";
 import { useAppStore } from "../../state/appStore";
@@ -105,12 +105,7 @@ export function NotebookShell() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-        <Panel variant="subtle" dashed className="mx-auto max-w-xl p-8 text-muted">
-          <p>
-            This notebook has no cells yet. Markdown, PHP, and HTTP cells arrive with
-            the next slice.
-          </p>
-        </Panel>
+        <CellList />
       </div>
 
       <ConfirmDialog

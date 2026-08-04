@@ -3,6 +3,7 @@ import {
   collectUnresolved,
   interpolate,
   resolveRequest,
+  tokenizePlaceholders,
   UnresolvedPlaceholdersError,
 } from "./interpolate";
 import type { EnvVar, HttpRequestSpec } from "../types/notebook";
@@ -144,6 +145,73 @@ describe("collectUnresolved", () => {
   it("counts a variable with an empty value as resolved", () => {
     const req = request({ url: "{{gap}}" });
     expect(collectUnresolved(req, vars(["gap", ""]))).toEqual([]);
+  });
+});
+
+describe("tokenizePlaceholders", () => {
+  it("splits text around resolved and missing tokens", () => {
+    const segments = tokenizePlaceholders(
+      "{{base_url}}/users?x={{missing}}!",
+      vars(["base_url", "https://api.test"]),
+    );
+    expect(segments).toEqual([
+      {
+        kind: "placeholder",
+        text: "{{base_url}}",
+        name: "base_url",
+        status: "resolved",
+        secret: false,
+        value: "https://api.test",
+      },
+      { kind: "text", text: "/users?x=" },
+      { kind: "placeholder", text: "{{missing}}", name: "missing", status: "missing", secret: false },
+      { kind: "text", text: "!" },
+    ]);
+  });
+
+  it("never carries the value of a secret variable", () => {
+    const secretVar = { name: "token", value: "secret-123", secret: true };
+    const [segment] = tokenizePlaceholders("{{token}}", [secretVar]);
+    expect(segment).toEqual({
+      kind: "placeholder",
+      text: "{{token}}",
+      name: "token",
+      status: "resolved",
+      secret: true,
+    });
+    expect(JSON.stringify(tokenizePlaceholders("{{token}}", [secretVar]))).not.toContain(
+      "secret-123",
+    );
+  });
+
+  it("keeps invalid tokens inside plain text segments", () => {
+    expect(tokenizePlaceholders("{{1bad}} {{ spaced }} {{", vars(["1bad", "x"]))).toEqual([
+      { kind: "text", text: "{{1bad}} {{ spaced }} {{" },
+    ]);
+  });
+
+  it("handles adjacent and repeated tokens", () => {
+    const segments = tokenizePlaceholders("{{a}}{{a}}{{b}}", vars(["a", "1"]));
+    expect(segments.map((s) => s.kind)).toEqual(["placeholder", "placeholder", "placeholder"]);
+    expect(segments.map((s) => (s.kind === "placeholder" ? s.status : ""))).toEqual([
+      "resolved",
+      "resolved",
+      "missing",
+    ]);
+  });
+
+  it("does not tokenize placeholder-looking text inside variable values", () => {
+    const segments = tokenizePlaceholders("{{a}}", vars(["a", "{{b}}"], ["b", "deep"]));
+    expect(segments).toEqual([
+      { kind: "placeholder", text: "{{a}}", name: "a", status: "resolved", secret: false, value: "{{b}}" },
+    ]);
+  });
+
+  it("returns a single text segment for placeholder-free text", () => {
+    expect(tokenizePlaceholders("plain", vars(["a", "1"]))).toEqual([
+      { kind: "text", text: "plain" },
+    ]);
+    expect(tokenizePlaceholders("", vars())).toEqual([]);
   });
 });
 

@@ -46,6 +46,52 @@ export function resolveRequest(
   };
 }
 
+export type PlaceholderSegment =
+  | { kind: "text"; text: string }
+  | {
+      kind: "placeholder";
+      /** Raw token text, e.g. "{{base_url}}". */
+      text: string;
+      name: string;
+      status: "resolved" | "missing";
+      secret: boolean;
+      /** Present only for resolved non-secret variables; secret values never leave the store. */
+      value?: string;
+    };
+
+/** Splits text into literal segments and valid {{name}} tokens with their
+ *  resolution status. Invalid tokens stay inside plain text segments. */
+export function tokenizePlaceholders(
+  text: string,
+  vars: readonly EnvVar[],
+): PlaceholderSegment[] {
+  const byName = new Map(vars.map((v) => [v.name, v]));
+  const segments: PlaceholderSegment[] = [];
+  let last = 0;
+  for (const match of text.matchAll(PLACEHOLDER_RE)) {
+    if (match.index > last) segments.push({ kind: "text", text: text.slice(last, match.index) });
+    const name = match[1];
+    const variable = byName.get(name);
+    if (!variable) {
+      segments.push({ kind: "placeholder", text: match[0], name, status: "missing", secret: false });
+    } else if (variable.secret) {
+      segments.push({ kind: "placeholder", text: match[0], name, status: "resolved", secret: true });
+    } else {
+      segments.push({
+        kind: "placeholder",
+        text: match[0],
+        name,
+        status: "resolved",
+        secret: false,
+        value: variable.value,
+      });
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) segments.push({ kind: "text", text: text.slice(last) });
+  return segments;
+}
+
 /** Placeholder names referenced anywhere in the request but not defined,
  *  deduplicated, in order of first appearance (url, then headers, then body). */
 export function collectUnresolved(

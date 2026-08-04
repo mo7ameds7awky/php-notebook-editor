@@ -6,12 +6,16 @@ import type { Notebook } from "../types/notebook";
 vi.mock("../ipc", () => ({
   loadNotebook: vi.fn(),
   saveNotebook: vi.fn(),
+  runHttp: vi.fn(),
+  cancelRun: vi.fn(),
 }));
 
-import { loadNotebook, saveNotebook } from "../ipc";
+import { cancelRun, loadNotebook, runHttp, saveNotebook } from "../ipc";
 
 const mockLoad = vi.mocked(loadNotebook);
 const mockSave = vi.mocked(saveNotebook);
+const mockRunHttp = vi.mocked(runHttp);
+const mockCancelRun = vi.mocked(cancelRun);
 
 const sampleNotebook = (): Notebook => ({
   schemaVersion: 1,
@@ -195,6 +199,102 @@ describe("cell mutations", () => {
     expect(after[0]).toMatchObject({ type: "markdown", source: "# hi" });
     expect(after[1].type).toBe("http");
     expect("source" in after[1]).toBe(false);
+  });
+
+  it("startHttpRun stores the terminal result in lastRun and clears running state", async () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cellId = cells()[0].id;
+    mockRunHttp.mockResolvedValue({
+      status: "succeeded",
+      response: { statusCode: 200, headers: [], body: "ok", bodyTruncated: false },
+      durationMs: 12,
+      ranAt: "2026-08-04T10:00:00Z",
+    });
+
+    await useNotebookStore.getState().startHttpRun(cellId);
+
+    const cell = cells()[0];
+    expect(cell).toMatchObject({
+      type: "http",
+      lastRun: { status: "succeeded", response: { statusCode: 200 } },
+    });
+    expect(useNotebookStore.getState().cellRuns[cellId]).toBeUndefined();
+    expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+
+  it("blocks duplicate runs for the same cell while running", async () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cellId = cells()[0].id;
+    let release!: (r: import("../types/notebook").HttpRunResult) => void;
+    mockRunHttp.mockImplementation(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+
+    const first = useNotebookStore.getState().startHttpRun(cellId);
+    expect(useNotebookStore.getState().cellRuns[cellId]).toBeDefined();
+    await useNotebookStore.getState().startHttpRun(cellId);
+    expect(mockRunHttp).toHaveBeenCalledTimes(1);
+
+    release({ status: "cancelled", error: { kind: "cancelled", message: "x" }, durationMs: 1, ranAt: "2026-08-04T10:00:00Z" });
+    await first;
+    expect(useNotebookStore.getState().cellRuns[cellId]).toBeUndefined();
+  });
+
+  it("running state never persists into the notebook while in flight", async () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cellId = cells()[0].id;
+    let release!: (r: import("../types/notebook").HttpRunResult) => void;
+    mockRunHttp.mockImplementation(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+
+    const pending = useNotebookStore.getState().startHttpRun(cellId);
+    const inFlightCell = cells()[0];
+    expect(inFlightCell.type === "http" && inFlightCell.lastRun).toBeFalsy();
+
+    release({ status: "failed", error: { kind: "network", message: "down" }, durationMs: 3, ranAt: "2026-08-04T10:00:00Z" });
+    await pending;
+    const after = cells()[0];
+    expect(after).toMatchObject({ lastRun: { status: "failed", error: { kind: "network" } } });
+  });
+
+  it("a thrown command error clears running state and propagates", async () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cellId = cells()[0].id;
+    mockRunHttp.mockRejectedValue(
+      new IpcError({ command: "run_http", code: "invalidInput", message: "bad url" }),
+    );
+
+    await expect(useNotebookStore.getState().startHttpRun(cellId)).rejects.toMatchObject({
+      code: "invalidInput",
+    });
+    expect(useNotebookStore.getState().cellRuns[cellId]).toBeUndefined();
+    const cell = cells()[0];
+    expect(cell.type === "http" && cell.lastRun).toBeFalsy();
+  });
+
+  it("cancelCellRun forwards the active runId", async () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cellId = cells()[0].id;
+    let release!: (r: import("../types/notebook").HttpRunResult) => void;
+    mockRunHttp.mockImplementation(
+      () => new Promise((resolve) => (release = resolve)),
+    );
+    mockCancelRun.mockResolvedValue({ cancelled: true });
+
+    const pending = useNotebookStore.getState().startHttpRun(cellId);
+    const { runId } = useNotebookStore.getState().cellRuns[cellId];
+    useNotebookStore.getState().cancelCellRun(cellId);
+    expect(mockCancelRun).toHaveBeenCalledWith(runId);
+
+    release({ status: "cancelled", error: { kind: "cancelled", message: "x" }, durationMs: 1, ranAt: "2026-08-04T10:00:00Z" });
+    await pending;
+    expect(useNotebookStore.getState().cellRuns[cellId]).toBeUndefined();
   });
 
   it("updateHttpRequest replaces the request of the target cell", () => {

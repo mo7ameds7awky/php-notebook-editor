@@ -24,14 +24,17 @@ const SOURCES: Record<LogoVariant, string> = {
 export function LogoMark({
   size = 28,
   variant = "mark",
+  className = "",
 }: {
   size?: number;
   variant?: LogoVariant;
+  className?: string;
 }) {
   return (
     <img
       src={SOURCES[variant]}
-      height={size}
+      style={{ height: size, width: "auto" }}
+      className={`shrink-0 ${className}`}
       alt={`${APP_NAME} logo`}
       draggable={false}
     />

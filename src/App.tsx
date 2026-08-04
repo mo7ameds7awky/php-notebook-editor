@@ -1,41 +1,52 @@
-import { useState } from "react";
-import { APP_NAME, APP_TAGLINE } from "./theme/appIdentity";
-import { LogoMark } from "./components/common/LogoMark";
-import "./App.css";
+import { useEffect, useRef, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { HomeScreen } from "./components/home/HomeScreen";
+import { NotebookShell } from "./components/notebook/NotebookShell";
+import { ConfirmDialog } from "./components/common/ConfirmDialog";
+import { useAppStore } from "./state/appStore";
+import { useNotebookStore } from "./state/notebookStore";
 
-type View = "home" | "notebook";
+const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 function App() {
-  // Placeholder view state until the routing store exists.
-  const [view] = useState<View>("home");
-  return view === "home" ? <HomePlaceholder /> : <NotebookPlaceholder />;
-}
+  const view = useAppStore((s) => s.view);
+  const notebook = useNotebookStore((s) => s.notebook);
 
-function HomePlaceholder() {
-  return (
-    <main className="app-shell">
-      <header className="app-header">
-        <LogoMark size={32} />
-        <div>
-          <h1 className="app-title">{APP_NAME}</h1>
-          <p className="app-tagline">{APP_TAGLINE}</p>
-        </div>
-      </header>
-      <section className="app-empty">
-        <p>
-          Your notebooks will live here. Creating, opening, and recent notebooks
-          arrive with the first vertical slice.
-        </p>
-      </section>
-    </main>
-  );
-}
+  const [closeRequested, setCloseRequested] = useState(false);
+  const allowClose = useRef(false);
 
-function NotebookPlaceholder() {
+  useEffect(() => {
+    if (!isTauri) return;
+    const win = getCurrentWindow();
+    const unlisten = win.onCloseRequested((event) => {
+      if (!allowClose.current && useNotebookStore.getState().dirty) {
+        event.preventDefault();
+        setCloseRequested(true);
+      }
+    });
+    return () => {
+      void unlisten.then((dispose) => dispose());
+    };
+  }, []);
+
   return (
-    <main className="app-shell">
-      <p className="app-tagline">Notebook view — arrives with the first vertical slice.</p>
-    </main>
+    <div className="h-screen w-screen overflow-hidden bg-app text-primary">
+      {view === "notebook" && notebook ? <NotebookShell /> : <HomeScreen />}
+
+      <ConfirmDialog
+        open={closeRequested}
+        title="Quit with unsaved changes?"
+        message="This notebook has unsaved changes. Quitting now will discard them."
+        confirmLabel="Discard and quit"
+        cancelLabel="Stay"
+        danger
+        onConfirm={() => {
+          allowClose.current = true;
+          void getCurrentWindow().close();
+        }}
+        onCancel={() => setCloseRequested(false)}
+      />
+    </div>
   );
 }
 

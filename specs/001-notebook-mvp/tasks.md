@@ -75,7 +75,7 @@ Each story phase is independently completable and demoable.
 - [x] T023 [US1] Notebook shell in `src/components/notebook/NotebookShell.tsx`: title display/edit, dirty indicator (●), Save / Save As buttons, back-to-home navigation guarded by unsaved-changes confirm (FR-004)
 - [x] T024 [US1] Window close protection in `src/App.tsx`: `getCurrentWindow().onCloseRequested` → when dirty, `event.preventDefault()` + confirm dialog (discard/cancel)
 - [x] T025 [US1] Error surfaces in `src/components/common/ErrorDialog.tsx` + `ConfirmDialog.tsx`: actionable messages for `invalidNotebook`, `versionUnsupported`, `fileNotFound` on open; `conflictOnDisk` → "file changed on disk" overwrite-confirm that retries save with `expectedMtimeMs: null`; `fileNotFound` on save → "file was moved or deleted" dialog offering Save As (routes to existing save-as flow) or Cancel — never silent recreation (spec edge case)
-- [ ] T026 [US1] CHECKPOINT: execute quickstart.md §US1 scenarios 1–7 manually; all pass → story done
+- [x] T026 [US1] CHECKPOINT: execute quickstart.md §US1 scenarios 1–7 manually; all pass → story done
 
 **Checkpoint**: First vertical slice — durable notebooks work end to end. (Full Phase 1 MVP = US1–US5 + Phase 8 verification, per spec scope)
 

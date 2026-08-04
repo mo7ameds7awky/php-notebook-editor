@@ -54,9 +54,11 @@ export function EnvAwareInput({
   const suggestions = active ? getEnvSuggestions(active.query, envVars) : [];
   const open = active !== null;
 
-  useEffect(() => {
-    setSelected(0);
-  }, [active?.start, active?.query]);
+  /** Central transition point: any fragment change resets the highlighted row. */
+  function updateActive(next: ActivePlaceholder | null) {
+    if (active?.start !== next?.start || active?.query !== next?.query) setSelected(0);
+    setActive(next);
+  }
 
   // Restores the caret after a suggestion rewrites the controlled value.
   useEffect(() => {
@@ -69,10 +71,10 @@ export function EnvAwareInput({
   function syncActive(element: HTMLInputElement) {
     const { selectionStart, selectionEnd } = element;
     if (selectionStart === null || selectionStart !== selectionEnd) {
-      setActive(null);
+      updateActive(null);
       return;
     }
-    setActive(findActivePlaceholder(element.value, selectionStart));
+    updateActive(findActivePlaceholder(element.value, selectionStart));
   }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -90,7 +92,7 @@ export function EnvAwareInput({
     if (cursor === null) return;
     const applied = applyEnvSuggestion(value, cursor, name);
     pendingCursor.current = applied.cursor;
-    setActive(null);
+    updateActive(null);
     onChange(applied.text);
   }
 
@@ -98,7 +100,7 @@ export function EnvAwareInput({
     if (!open) return;
     if (event.key === "Escape") {
       event.preventDefault();
-      setActive(null);
+      updateActive(null);
       return;
     }
     if (suggestions.length === 0) return;
@@ -131,7 +133,7 @@ export function EnvAwareInput({
         onChange={handleChange}
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}
-        onBlur={() => setActive(null)}
+        onBlur={() => updateActive(null)}
       />
       {open && (
         <ul

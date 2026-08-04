@@ -138,3 +138,22 @@ separator concatenation, keeping macOS/Windows/Linux behavior consistent.
 - Rust: `cargo test` unit tests; Docker integration tests arrive `#[ignore]`-gated.
 - Gates per merge: `bun run typecheck`, `bun run lint`, `bun run test`,
   `cargo test`, `cargo clippy`.
+
+## Future: Output Intelligence track (planned, Phase 2+)
+
+Roadmap: [docs/roadmap.md](./roadmap.md). Not implemented; recorded here so future
+result-inspector work lands in the right seams without reworking Phase 1:
+
+- Integration points: `HttpResultView` / future `PhpResultView` are the only result
+  mount points — view-mode tabs, JSON trees, copy/export, history, and diffing all
+  attach there. Inspection/formatting logic (tree building, path derivation, PHP
+  array export, diffs, redaction) goes in pure `src/lib/**` modules.
+- Data: viewers render the persisted `lastRun` contract shapes; output history and
+  pinning need a future schema revision (append-only, forward-tolerant like the
+  rest of the file format).
+- Security constraints carried over: response HTML/scripts are never executed
+  (source view only unless the security model is explicitly revisited); raw output
+  always stays available; the logging policy above binds every copy/export and
+  redaction feature; server-returned bodies display as received unless the user
+  explicitly applies a future redaction tool; saving extracted values as env vars
+  requires confirmation and token-like values default to secret.

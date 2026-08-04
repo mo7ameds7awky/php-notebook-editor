@@ -152,3 +152,11 @@ Execution paths:
 | SC-006 | Open `.pnb.json` in a text editor; make two saves and `git diff` them |
 | SC-007 | US5.1/US5.2 — specific remedy per failure mode |
 | SC-009 | US4.5 — zero secret occurrences in logs/UI |
+
+## Future scenarios (Phase 2+ — not part of the Phase 1 acceptance pass)
+
+The Output Intelligence track (rich result viewers, JSON tree/path tools, output
+history/pinning/diffing, redaction) ships in later phases with its own quickstart
+scenarios. Its acceptance criteria are pre-recorded in
+[docs/roadmap.md](../../docs/roadmap.md) §Acceptance criteria; nothing in that track
+alters the Phase 1 scenarios or spot-checks above.

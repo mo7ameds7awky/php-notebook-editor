@@ -208,3 +208,38 @@ A developer writes a PHP snippet in a cell and runs it. The code executes in an 
 - Environment variable values are stored inside the notebook file; entering a value there is the user's explicit choice. Secret-flagged values are masked in the UI but stored with the notebook — keeping actual secrets out of shared files is the user's responsibility in Phase 1.
 - The latest execution result of each runnable cell is saved with the notebook so reopened notebooks show their last-known outputs.
 - Out of scope for Phase 1 (per project charter): cloud sync, real-time collaboration, AI assistance, full IDE/API-client replacement, advanced debugging, auto-updates, marketplace distribution.
+
+## Future Directions *(out of Phase 1 scope — non-binding)*
+
+These tracks are recorded so later feature specs start from an agreed direction. They
+add **no** functional requirements, success criteria, or acceptance scenarios to this
+specification, and none of them may block or expand the current US4/US5 work.
+
+### Output Intelligence & Developer-Friendly Results
+
+Cell outputs should evolve from raw text dumps into developer-friendly result
+inspectors that help users inspect, understand, copy, transform, document, and test
+outputs. Planned phasing (full detail, scope rules, and acceptance criteria:
+[docs/roadmap.md](../../docs/roadmap.md)):
+
+- **Phase 2 — usable MVP output enhancements**: rich HTTP result viewer with
+  metadata summary and friendly HTTP error explanations; Tree/Pretty/Raw/Headers
+  view modes with raw always available; collapsible JSON tree preview; copy/export
+  actions (raw body, formatted JSON, selected node, headers, summary, copy as PHP
+  array); content-type aware rendering (HTML as source only, binary as metadata);
+  search inside output.
+- **Phase 3 — Laravel/API differentiation**: JSON path inspector (dot + JSONPath
+  copy); Pest/PHPUnit/Laravel HTTP test snippet generation; save response value as
+  env var (confirmation required, token-like values default to secret); save
+  response as fixture; convert responses into Markdown documentation cells.
+- **Phase 4 — polish and sharing**: per-cell output history; output pinning;
+  output comparison (previous vs current, expected vs actual, JSON field diffs);
+  redaction/privacy tools; advanced previews (safe image, improved XML, safe HTML
+  source, binary download handling).
+
+Standing constraints for the whole track: raw output always remains available; rich
+previews never execute HTML/scripts (FR-024 continues to apply); secret/output
+privacy stays consistent with the logging policy and SC-009 (server-returned bodies
+display as received unless a future redaction feature is explicitly used); copy and
+export never mutate notebook data without an explicit user action; the product does
+not become a full Postman replacement.

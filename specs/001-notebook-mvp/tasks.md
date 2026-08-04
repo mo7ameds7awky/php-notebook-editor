@@ -265,3 +265,49 @@ keeps gates green (typecheck, lint, tests).
   Docker-less machines/CI
 - Contract drift protection: any IPC shape change touches contracts/ipc-commands.md +
   both mirrors + fixtures (see contract change policy)
+
+---
+
+## Future backlog — Output Intelligence & Developer-Friendly Results (Phase 2+)
+
+**NOT part of this feature's execution scope.** These items are deliberately listed
+without task IDs or checkboxes so implementation runs never pick them up. They do not
+extend US4/US5 and must not block PHP execution (US5). Each phase graduates through
+its own spec → plan → tasks cycle when scheduled. Direction, scope rules, and
+acceptance criteria: [docs/roadmap.md](../../docs/roadmap.md); summary in
+spec.md §Future Directions.
+
+Phase 2 — usable MVP output enhancements:
+
+- Add rich HTTP result viewer (metadata summary: status, method, URL, duration,
+  size, content type, timestamp; HTTP-status vs transport-failure distinction)
+- Add JSON tree preview (collapsible, type-colored, indentation guides, key/length
+  counts, expand/collapse all, large-response handling)
+- Add response view tabs (Tree / Pretty / Raw / Headers — raw always available)
+- Add copy/export response actions (raw body, formatted JSON, selected node,
+  headers, summary, copy as PHP array for valid JSON)
+- Add content-type aware output rendering (JSON, text, HTML source-only, XML pretty
+  if practical, binary metadata summary)
+- Add output search (body search, match highlighting, next/previous if practical)
+- Add friendly HTTP error explanations
+
+Phase 3 — Laravel/API differentiation:
+
+- Add JSON path inspector (dot path + JSONPath, copy path/value/subtree)
+- Add response-to-test snippet generation (Pest, PHPUnit, Laravel HTTP test,
+  assertJsonPath examples)
+- Add save response value as env var (confirmation required, token-like values
+  default secret, extracted secrets never logged)
+- Add save response as fixture (name, export/copy, reuse in test generation)
+- Add convert response to Markdown documentation cell (runnable documentation flow)
+
+Phase 4 — polish and sharing:
+
+- Add output history (previous runs with timestamp/status/duration/size, selectable)
+- Add output pinning (reruns never replace a pinned result)
+- Add response comparison (previous vs current, expected vs actual, JSON field and
+  status/header/body diffs)
+- Add output redaction/privacy tools (mark sensitive, copy redacted, manual
+  redaction, optional no-persist; raw stored output only changes on explicit save)
+- Add advanced response previews (safe image, improved XML, safe HTML source-only,
+  binary download handling)

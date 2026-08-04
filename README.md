@@ -52,6 +52,11 @@ The goal is not to replace a full IDE, Postman, or Tinkerwell. Instead, the goal
 - learning notes
 - debugging playbooks
 
+Longer-term product direction beyond the Phase 1 MVP — including the planned
+"Output Intelligence & Developer-Friendly Results" track (rich result inspectors,
+JSON tree/path tools, test snippet generation, output history and redaction) — is
+tracked in [docs/roadmap.md](docs/roadmap.md).
+
 ---
 
 ## Core idea

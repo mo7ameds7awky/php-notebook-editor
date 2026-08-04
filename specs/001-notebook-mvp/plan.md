@@ -147,3 +147,26 @@ raw brand colors.
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
 No violations — table intentionally empty.
+
+## Forward-Compatibility Notes — Output Intelligence track (Phase 2+)
+
+A future "Output Intelligence & Developer-Friendly Results" track
+([docs/roadmap.md](../../docs/roadmap.md), summarized in spec.md §Future Directions)
+will grow cell outputs into rich result inspectors. It is **not** part of this plan
+and changes nothing in Phase 1 scope; the notes below only record that the Phase 1
+architecture already leaves the right seams, so no Phase 1 decision needs revisiting:
+
+- `HttpResponseSummary`/`PhpRunResult` are persisted per cell as `lastRun`, so richer
+  viewers (tree/pretty/raw modes, metadata summaries) are pure presentation layers
+  over data the contract already carries; output history would extend, not replace,
+  this shape in a future schema revision.
+- Result rendering is isolated in `HttpResultView` (and later `PhpResultView`), the
+  single mount point where view-mode tabs, JSON trees, and copy/export actions would
+  plug in.
+- Formatting/inspection logic (JSON tree building, path derivation, PHP-array
+  export, diffing) belongs in pure `src/lib/**` modules per Principle III — same
+  placement rule the interpolation lib follows today.
+- The security posture carries over unchanged: responses stay inert data (FR-024 —
+  future HTML preview is source-view only unless the security model is explicitly
+  revisited), raw output always remains available, and the logging policy
+  (no payloads, no secrets) binds every future copy/export/redaction feature.

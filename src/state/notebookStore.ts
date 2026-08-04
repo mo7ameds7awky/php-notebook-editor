@@ -12,6 +12,11 @@ import {
   validateEnvVarName,
   type EnvVarNameError,
 } from "../lib/notebook";
+import {
+  collectUnresolved,
+  resolveRequest,
+  UnresolvedPlaceholdersError,
+} from "../lib/interpolate";
 import { cancelRun, loadNotebook, runHttp, saveNotebook } from "../ipc";
 
 interface NotebookState {
@@ -190,6 +195,12 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
     const cell = notebook.cells.find((c) => c.id === cellId);
     if (!cell || cell.type !== "http") return;
 
+    // Unresolved placeholders block the run with a named warning; the raw
+    // tokens are never sent literally.
+    const unresolved = collectUnresolved(cell.request, notebook.envVars);
+    if (unresolved.length > 0) throw new UnresolvedPlaceholdersError(unresolved);
+    const request = resolveRequest(cell.request, notebook.envVars);
+
     const runId = crypto.randomUUID();
     set({ cellRuns: { ...get().cellRuns, [cellId]: { runId } } });
 
@@ -201,7 +212,7 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
 
     let result: HttpRunResult;
     try {
-      result = await runHttp(runId, cell.request);
+      result = await runHttp(runId, request);
     } catch (e) {
       clearRunning();
       throw e;

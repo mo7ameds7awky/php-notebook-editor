@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useNotebookStore } from "./notebookStore";
 import { IpcError } from "../ipc/invoke";
+import { UnresolvedPlaceholdersError } from "../lib/interpolate";
 import type { Notebook } from "../types/notebook";
 
 vi.mock("../ipc", () => ({
@@ -398,5 +399,95 @@ describe("cell mutations", () => {
       request: { method: "POST", url: "https://example.test" },
     });
     expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+});
+
+describe("startHttpRun interpolation", () => {
+  beforeEach(async () => {
+    mockLoad.mockResolvedValue({ notebook: sampleNotebook(), fileMtimeMs: 42 });
+    await useNotebookStore.getState().openFromPath("/x/s.pnb.json");
+    useNotebookStore.getState().addCell("http");
+  });
+
+  const cells = () => useNotebookStore.getState().notebook?.cells ?? [];
+
+  const httpCell = () => {
+    const cell = cells()[0];
+    if (cell?.type !== "http") throw new Error("expected http cell");
+    return cell;
+  };
+
+  it("blocks the run and names the placeholders when variables are missing", async () => {
+    const cell = httpCell();
+    useNotebookStore.getState().updateHttpRequest(cell.id, {
+      ...cell.request,
+      url: "{{base_url}}/x",
+      headers: [{ name: "Authorization", value: "Bearer {{token}}" }],
+    });
+
+    await expect(useNotebookStore.getState().startHttpRun(cell.id)).rejects.toMatchObject({
+      names: ["base_url", "token"],
+    });
+    await expect(useNotebookStore.getState().startHttpRun(cell.id)).rejects.toBeInstanceOf(
+      UnresolvedPlaceholdersError,
+    );
+
+    expect(mockRunHttp).not.toHaveBeenCalled();
+    expect(useNotebookStore.getState().cellRuns[cell.id]).toBeUndefined();
+    expect(httpCell().lastRun).toBeFalsy();
+  });
+
+  it("sends the resolved request and keeps placeholders in the stored cell", async () => {
+    useNotebookStore.getState().addEnvVar({ name: "base_url", value: "https://api.test", secret: false });
+    useNotebookStore.getState().addEnvVar({ name: "token", value: "secret-123", secret: true });
+    const cell = httpCell();
+    useNotebookStore.getState().updateHttpRequest(cell.id, {
+      ...cell.request,
+      url: "{{base_url}}/login",
+      headers: [{ name: "Authorization", value: "Bearer {{token}}" }],
+      body: '{"t":"{{token}}"}',
+    });
+    mockRunHttp.mockResolvedValue({
+      status: "succeeded",
+      response: { statusCode: 200, headers: [], body: "ok", bodyTruncated: false },
+      durationMs: 5,
+      ranAt: "2026-08-04T10:00:00Z",
+    });
+
+    await useNotebookStore.getState().startHttpRun(cell.id);
+
+    expect(mockRunHttp).toHaveBeenCalledWith(expect.any(String), {
+      method: "GET",
+      url: "https://api.test/login",
+      headers: [{ name: "Authorization", value: "Bearer secret-123" }],
+      body: '{"t":"secret-123"}',
+      timeoutMs: cell.request.timeoutMs,
+    });
+
+    const stored = httpCell();
+    expect(stored.request.url).toBe("{{base_url}}/login");
+    expect(stored.request.headers[0].value).toBe("Bearer {{token}}");
+    expect(stored.request.body).toBe('{"t":"{{token}}"}');
+    expect(stored.lastRun?.status).toBe("succeeded");
+  });
+
+  it("resolves a request with no placeholders unchanged", async () => {
+    const cell = httpCell();
+    useNotebookStore.getState().updateHttpRequest(cell.id, {
+      ...cell.request,
+      url: "https://plain.test",
+    });
+    mockRunHttp.mockResolvedValue({
+      status: "succeeded",
+      response: { statusCode: 204, headers: [], body: "", bodyTruncated: false },
+      durationMs: 2,
+      ranAt: "2026-08-04T10:00:00Z",
+    });
+
+    await useNotebookStore.getState().startHttpRun(cell.id);
+    expect(mockRunHttp).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ url: "https://plain.test" }),
+    );
   });
 });

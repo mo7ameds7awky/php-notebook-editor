@@ -2,6 +2,7 @@
  *  leads; it is carried as optional collapsible detail. */
 
 import { IpcError } from "../ipc/invoke";
+import { UnresolvedPlaceholdersError } from "./interpolate";
 
 export type ErrorSeverity = "error" | "warning";
 
@@ -20,6 +21,16 @@ const FALLBACK: Omit<UserFacingError, "detail"> = {
 };
 
 export function describeError(e: unknown): UserFacingError {
+  if (e instanceof UnresolvedPlaceholdersError) {
+    const tokens = e.names.map((name) => `{{${name}}}`).join(", ");
+    const plural = e.names.length > 1;
+    return {
+      title: plural ? "Missing environment variables" : "Missing environment variable",
+      message: `This request references ${tokens}, but ${plural ? "these variables are" : "that variable is"} not defined in this notebook. Add ${plural ? "them" : "it"} in the Environment variables panel or fix the placeholder, then run again.`,
+      severity: "warning",
+    };
+  }
+
   if (!(e instanceof IpcError)) {
     return { ...FALLBACK, detail: e instanceof Error ? e.message : String(e) };
   }

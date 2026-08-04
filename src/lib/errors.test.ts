@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { IpcError } from "../ipc/invoke";
 import { describeError } from "./errors";
+import { UnresolvedPlaceholdersError } from "./interpolate";
 import { ERROR_CODES } from "../types/notebook";
 
 const ipc = (command: string, code: (typeof ERROR_CODES)[number], message = "raw detail") =>
@@ -31,6 +32,18 @@ describe("describeError", () => {
 
   it("marks newer-version files as a warning, not an error", () => {
     expect(describeError(ipc("load_notebook", "versionUnsupported")).severity).toBe("warning");
+  });
+
+  it("names every unresolved placeholder as a warning, not an error", () => {
+    const single = describeError(new UnresolvedPlaceholdersError(["base_url"]));
+    expect(single.severity).toBe("warning");
+    expect(single.title).toBe("Missing environment variable");
+    expect(single.message).toContain("{{base_url}}");
+
+    const multiple = describeError(new UnresolvedPlaceholdersError(["base_url", "token"]));
+    expect(multiple.title).toBe("Missing environment variables");
+    expect(multiple.message).toContain("{{base_url}}");
+    expect(multiple.message).toContain("{{token}}");
   });
 
   it("falls back safely for non-IPC values", () => {

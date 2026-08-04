@@ -1,64 +1,156 @@
-/* Global base styles; all values come from CSS custom properties stamped by
-   applyTokens(). */
+/* Theme entry: the --pnb-* design-token variables (runtime source of color
+   values), Tailwind v4 configuration, and global base styles. */
 
-* {
-  box-sizing: border-box;
+@import "tailwindcss";
+
+:root {
+  --pnb-bg-app: #101218;
+  --pnb-bg-surface: #181B23;
+  --pnb-bg-elevated: #202431;
+  --pnb-bg-subtle: #151821;
+
+  --pnb-brand-primary: #6C7FD8;
+  --pnb-brand-primary-hover: #7D8FEB;
+  --pnb-brand-primary-active: #5B6BC4;
+
+  --pnb-text-primary: #F4F6FB;
+  --pnb-text-secondary: #AAB0C0;
+  --pnb-text-muted: #707789;
+
+  --pnb-border-subtle: #2A2F3D;
+  --pnb-border-default: #353B4D;
+  --pnb-border-strong: #485066;
+  --pnb-focus: #6C7FD8;
+
+  --pnb-success: #39D98A;
+  --pnb-warning: #F5C451;
+  --pnb-danger: #FF5C7A;
+  --pnb-info: #4DA3FF;
+
+  --pnb-cell-markdown: #8A94A6;
+  --pnb-cell-php: #777BB4;
+  --pnb-cell-http: #35C2A4;
+
+  --pnb-code-bg: #0B0D12;
+  --pnb-code-surface: #12151D;
+
+  --pnb-scrim: rgba(0, 0, 0, 0.55);
+
+  --pnb-font-sans: Inter, ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pnb-font-mono: "JetBrains Mono", "SFMono-Regular", Consolas,
+    "Liberation Mono", Menlo, monospace;
+
+  color-scheme: dark;
 }
 
-html,
-body,
-#root {
-  height: 100%;
+/* Semantic Tailwind palette — utilities consume the --pnb-* variables. */
+@theme inline {
+  --font-sans: var(--pnb-font-sans);
+  --font-mono: var(--pnb-font-mono);
+
+  --color-app: var(--pnb-bg-app);
+  --color-surface: var(--pnb-bg-surface);
+  --color-elevated: var(--pnb-bg-elevated);
+  --color-subtle: var(--pnb-bg-subtle);
+
+  --color-primary: var(--pnb-text-primary);
+  --color-secondary: var(--pnb-text-secondary);
+  --color-muted: var(--pnb-text-muted);
+
+  --color-brand: var(--pnb-brand-primary);
+  --color-brand-hover: var(--pnb-brand-primary-hover);
+  --color-brand-active: var(--pnb-brand-primary-active);
+  --color-focus: var(--pnb-focus);
+
+  --color-success: var(--pnb-success);
+  --color-warning: var(--pnb-warning);
+  --color-danger: var(--pnb-danger);
+  --color-info: var(--pnb-info);
+
+  --color-cell-markdown: var(--pnb-cell-markdown);
+  --color-cell-php: var(--pnb-cell-php);
+  --color-cell-http: var(--pnb-cell-http);
+
+  --color-code-bg: var(--pnb-code-bg);
+  --color-code-surface: var(--pnb-code-surface);
+
+  --color-scrim: var(--pnb-scrim);
 }
 
-body {
-  margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Border-color utilities with names independent of the background palette. */
+@utility border-subtle {
+  border-color: var(--pnb-border-subtle);
 }
 
-code,
-pre,
-kbd,
-samp {
-  font-family: var(--font-mono);
+@utility border-default {
+  border-color: var(--pnb-border-default);
 }
 
-pre {
-  background: var(--color-code-bg);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
+@utility border-strong {
+  border-color: var(--pnb-border-strong);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
+@layer base {
+  body {
+    background: var(--pnb-bg-app);
+    color: var(--pnb-text-primary);
+    font-family: var(--pnb-font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-::selection {
-  background: var(--color-primary);
-  color: var(--color-text-primary);
-}
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--pnb-font-mono);
+  }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+  pre {
+    background: var(--pnb-code-bg);
+    border: 1px solid var(--pnb-border-subtle);
+    border-radius: 8px;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  :focus-visible {
+    outline: 2px solid var(--pnb-focus);
+    outline-offset: 2px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 5px;
-}
+  ::selection {
+    background: var(--pnb-brand-primary);
+    color: var(--pnb-text-primary);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--pnb-border-default);
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--pnb-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

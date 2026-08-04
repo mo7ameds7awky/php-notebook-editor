@@ -1,7 +1,15 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { applyTokens, cellAccents, colors, radii, spacing, typography } from "./tokens";
+import { cellAccents, colors, overlays, typography } from "./tokens";
 
-const HEX = /^#[0-9a-f]{6}$/i;
+const HEX = /^#[0-9A-F]{6}$/i;
+
+const themeCss = readFileSync(
+  path.resolve(path.dirname(fileURLToPath(import.meta.url)), "theme.css"),
+  "utf8",
+);
 
 describe("design tokens", () => {
   it("defines an accent for every cell type, exactly", () => {
@@ -18,6 +26,7 @@ describe("design tokens", () => {
     expect(colors.bg).toBe("#101218");
     expect(colors.primary).toBe("#6C7FD8");
     expect(colors.focus).toBe(colors.primary);
+    expect(colors.borderStrong).toBe("#485066");
     expect(colors.codeBg).toBe("#0B0D12");
   });
 
@@ -35,21 +44,27 @@ describe("design tokens", () => {
   it("does not reference external fonts", () => {
     expect(typography.fontSans).not.toMatch(/https?:/);
     expect(typography.fontMono).not.toMatch(/https?:/);
+    expect(themeCss).not.toMatch(/@import\s+url\(/);
   });
 });
 
-describe("applyTokens", () => {
-  it("stamps CSS custom properties on the target element", () => {
-    const el = document.createElement("div");
-    applyTokens(el);
-    expect(el.style.getPropertyValue("--color-bg")).toBe(colors.bg);
-    expect(el.style.getPropertyValue("--color-surface-elevated")).toBe(colors.surfaceElevated);
-    expect(el.style.getPropertyValue("--color-text-primary")).toBe(colors.textPrimary);
-    expect(el.style.getPropertyValue("--color-code-bg")).toBe(colors.codeBg);
-    expect(el.style.getPropertyValue("--accent-cell-php")).toBe(cellAccents.php);
-    expect(el.style.getPropertyValue("--space-md")).toBe(spacing.md);
-    expect(el.style.getPropertyValue("--radius-md")).toBe(radii.md);
-    expect(el.style.getPropertyValue("--font-sans")).not.toBe("");
-    expect(el.style.colorScheme).toBe("dark");
+describe("theme.css stays in sync with tokens.ts", () => {
+  it("contains every color value from the TypeScript mirror", () => {
+    for (const value of [...Object.values(colors), ...Object.values(cellAccents)]) {
+      expect(themeCss).toContain(value);
+    }
+  });
+
+  it("contains the scrim overlay", () => {
+    expect(themeCss).toContain(overlays.scrim);
+  });
+
+  it("defines the semantic Tailwind mapping and border utilities", () => {
+    expect(themeCss).toContain("@theme inline");
+    expect(themeCss).toContain("--color-app: var(--pnb-bg-app)");
+    expect(themeCss).toContain("--color-cell-php: var(--pnb-cell-php)");
+    expect(themeCss).toContain("@utility border-subtle");
+    expect(themeCss).toContain("@utility border-default");
+    expect(themeCss).toContain("@utility border-strong");
   });
 });

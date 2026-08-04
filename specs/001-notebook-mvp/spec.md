@@ -155,6 +155,7 @@ A developer writes a PHP snippet in a cell and runs it. The code executes in an 
 - **FR-023**: HTTP requests MUST have a timeout (default 30 seconds); on expiry the run terminates and reports the timeout.
 - **FR-024**: Response content MUST be treated strictly as data for display — never executed or rendered as live content.
 - **FR-025**: Oversized outputs from any runnable cell (HTTP responses and PHP output streams alike) MUST be truncated in the display with a clear truncation indicator.
+- **FR-035**: HTTP cells MUST support importing a pasted cURL command that fills the request (method, URL, headers, raw/JSON body, timeout via --max-time, including multi-line commands with backslash continuations). Unsupported cURL options MUST surface as visible warnings rather than failing the import; sensitive-looking headers (e.g. Authorization, Cookie, API keys) MUST prompt a review notice; a failed parse MUST leave the existing cell unchanged; an imported request MUST NOT run automatically.
 
 **PHP execution**
 

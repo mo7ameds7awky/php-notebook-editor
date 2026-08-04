@@ -82,6 +82,17 @@ Use any reachable endpoint; `https://httpbin.org` shown here (needs network).
 7. Fetch a large body (e.g. `https://httpbin.org/bytes/4000000` or a big text URL).
    **Expect**: display truncated with an explicit truncation indicator; app stays
    responsive.
+8. In an HTTP cell, click Import cURL and paste:
+   ```
+   curl -X POST 'https://httpbin.org/post' \
+     -H 'Content-Type: application/json' \
+     -H 'Authorization: Bearer secret-123' \
+     -d '{"name":"pnb"}'
+   ```
+   **Expect**: method POST, URL, both headers, and body populate the cell; a review
+   notice flags the Authorization header; the request does NOT run by itself.
+   Clicking Run afterwards echoes the JSON body. Pasting garbage (e.g. `wget …`)
+   shows a friendly error and leaves the cell unchanged.
 
 ### US4 — Environment variables (P4)
 

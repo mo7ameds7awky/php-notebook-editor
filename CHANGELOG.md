@@ -24,3 +24,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   output caps, recents limit) on both the Rust and TypeScript sides.
 - Baseline accessibility: managed dialog focus, labelled controls, visible focus
   rings, non-color status indicators, reduced-motion support.
+- Notebook environment variables (User Story 4): per-notebook variable panel with
+  name validation, uniqueness, secret masking with per-row reveal; `{{name}}`
+  interpolation into HTTP URL, header names, header values, and body at run time;
+  runs referencing undefined variables are blocked with a warning naming each
+  placeholder; secret values never appear in logs.
+- Environment variable highlighting and autocomplete in HTTP cells: placeholder
+  chips show resolved/missing status with tooltips (secret values stay masked);
+  typing `{{` in the URL or a header value suggests variables with keyboard and
+  mouse insertion. Body shows the highlighting preview only — in-editor body
+  autocomplete (CodeMirror integration) is a planned follow-up.

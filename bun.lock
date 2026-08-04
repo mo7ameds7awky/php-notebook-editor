@@ -8,6 +8,7 @@
         "@codemirror/lang-json": "^6.0.2",
         "@codemirror/lang-markdown": "^6.5.1",
         "@codemirror/lang-php": "^6.0.2",
+        "@lezer/highlight": "^1.2.3",
         "@radix-ui/react-dialog": "^1.1.23",
         "@tailwindcss/vite": "^4.3.3",
         "@tauri-apps/api": "^2",

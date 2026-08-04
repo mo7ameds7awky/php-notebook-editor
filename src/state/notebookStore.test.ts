@@ -127,3 +127,91 @@ describe("editing and saving", () => {
     expect(state.dirty).toBe(false);
   });
 });
+
+describe("cell mutations", () => {
+  beforeEach(async () => {
+    mockLoad.mockResolvedValue({ notebook: sampleNotebook(), fileMtimeMs: 42 });
+    await useNotebookStore.getState().openFromPath("/x/s.pnb.json");
+  });
+
+  const cells = () => useNotebookStore.getState().notebook?.cells ?? [];
+  const types = () => cells().map((c) => c.type);
+
+  it("addCell appends by default and inserts at an index", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("markdown");
+    store.addCell("php");
+    useNotebookStore.getState().addCell("http", 1);
+    expect(types()).toEqual(["markdown", "http", "php"]);
+    expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+
+  it("addCell clamps out-of-range indexes", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("markdown", 99);
+    useNotebookStore.getState().addCell("php", -5);
+    expect(types()).toEqual(["php", "markdown"]);
+  });
+
+  it("generated cell ids stay unique", () => {
+    const store = useNotebookStore.getState();
+    for (let i = 0; i < 20; i++) store.addCell("markdown");
+    const ids = cells().map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("deleteCell removes exactly the target", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("markdown");
+    store.addCell("php");
+    const target = cells()[0].id;
+    useNotebookStore.getState().deleteCell(target);
+    expect(types()).toEqual(["php"]);
+    expect(cells().some((c) => c.id === target)).toBe(false);
+  });
+
+  it("moveCell swaps neighbors and no-ops at boundaries", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("markdown");
+    store.addCell("php");
+    store.addCell("http");
+    const [a, b, c] = cells().map((x) => x.id);
+    useNotebookStore.getState().moveCell(b, "up");
+    expect(cells().map((x) => x.id)).toEqual([b, a, c]);
+    useNotebookStore.getState().moveCell(b, "up");
+    expect(cells().map((x) => x.id)).toEqual([b, a, c]);
+    useNotebookStore.getState().moveCell(c, "down");
+    expect(cells().map((x) => x.id)).toEqual([b, a, c]);
+  });
+
+  it("updateCellSource touches markdown/php only", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("markdown");
+    store.addCell("http");
+    const [md, http] = cells();
+    useNotebookStore.getState().updateCellSource(md.id, "# hi");
+    useNotebookStore.getState().updateCellSource(http.id, "ignored");
+    const after = cells();
+    expect(after[0]).toMatchObject({ type: "markdown", source: "# hi" });
+    expect(after[1].type).toBe("http");
+    expect("source" in after[1]).toBe(false);
+  });
+
+  it("updateHttpRequest replaces the request of the target cell", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cell = cells()[0];
+    if (cell.type !== "http") throw new Error("expected http cell");
+    useNotebookStore.getState().updateHttpRequest(cell.id, {
+      ...cell.request,
+      method: "POST",
+      url: "https://example.test",
+    });
+    const after = cells()[0];
+    expect(after).toMatchObject({
+      type: "http",
+      request: { method: "POST", url: "https://example.test" },
+    });
+    expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+});

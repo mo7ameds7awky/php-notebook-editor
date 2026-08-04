@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import type { Notebook } from "../types/notebook";
-import { createEmptyNotebook } from "../lib/notebook";
+import type { CellType, HttpRequestSpec, Notebook } from "../types/notebook";
+import { createCell, createEmptyNotebook } from "../lib/notebook";
 import { loadNotebook, saveNotebook } from "../ipc";
 
 interface NotebookState {
@@ -18,6 +18,15 @@ interface NotebookState {
   /** Saves to a new path and adopts it as the notebook's path. */
   saveAs: (path: string) => Promise<void>;
   setTitle: (title: string) => void;
+  /** Inserts a new cell of the given type at index (appends when omitted). */
+  addCell: (type: CellType, index?: number) => void;
+  deleteCell: (id: string) => void;
+  /** Swaps the cell one position up or down; boundary moves are no-ops. */
+  moveCell: (id: string, direction: "up" | "down") => void;
+  /** Updates the source of a markdown or php cell. */
+  updateCellSource: (id: string, source: string) => void;
+  /** Replaces the request of an http cell. */
+  updateHttpRequest: (id: string, request: HttpRequestSpec) => void;
   close: () => void;
 }
 
@@ -67,6 +76,55 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
     const { notebook } = get();
     if (!notebook) return;
     set({ notebook: { ...notebook, title }, dirty: true });
+  },
+
+  addCell: (type, index) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const cells = [...notebook.cells];
+    const at = index === undefined ? cells.length : Math.max(0, Math.min(index, cells.length));
+    cells.splice(at, 0, createCell(type));
+    set({ notebook: { ...notebook, cells }, dirty: true });
+  },
+
+  deleteCell: (id) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const cells = notebook.cells.filter((cell) => cell.id !== id);
+    if (cells.length === notebook.cells.length) return;
+    set({ notebook: { ...notebook, cells }, dirty: true });
+  },
+
+  moveCell: (id, direction) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const from = notebook.cells.findIndex((cell) => cell.id === id);
+    if (from < 0) return;
+    const to = direction === "up" ? from - 1 : from + 1;
+    if (to < 0 || to >= notebook.cells.length) return;
+    const cells = [...notebook.cells];
+    [cells[from], cells[to]] = [cells[to], cells[from]];
+    set({ notebook: { ...notebook, cells }, dirty: true });
+  },
+
+  updateCellSource: (id, source) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const cells = notebook.cells.map((cell) =>
+      cell.id === id && (cell.type === "markdown" || cell.type === "php")
+        ? { ...cell, source }
+        : cell,
+    );
+    set({ notebook: { ...notebook, cells }, dirty: true });
+  },
+
+  updateHttpRequest: (id, request) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const cells = notebook.cells.map((cell) =>
+      cell.id === id && cell.type === "http" ? { ...cell, request } : cell,
+    );
+    set({ notebook: { ...notebook, cells }, dirty: true });
   },
 
   close: () => set({ ...CLOSED }),

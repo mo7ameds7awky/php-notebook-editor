@@ -24,10 +24,18 @@ Voice guidance: plain, specific, honest. State what happened and what to do next
 ## Theme
 
 - **Dark theme only for MVP.** No light theme yet.
+- **Styling stack**: PHP Notebook Editor uses Tailwind CSS backed by centralized CSS
+  variables/design tokens. Components must use semantic tokens/utilities rather than
+  hardcoded colors. Heavy UI frameworks are intentionally avoided (no Material UI,
+  Ant, Bootstrap, Chakra, or full shadcn/ui). A small internal component system
+  (`Button`, `Panel`, `Badge`, dialogs) provides reusable primitives. Radix UI may be
+  added later only for accessibility-heavy primitives.
 - **No user-facing theme customization in MVP.** Codebase-level customization is
-  required and centralized: all values live in `tokens.ts`, stamped as CSS custom
-  properties at startup by `applyTokens()`; `theme.css` and components consume the
-  variables (or the typed constants). Raw hex exists **only** in `tokens.ts`.
+  required and centralized: `theme.css` defines the `--pnb-*` variables (runtime
+  source) plus the Tailwind `@theme` mapping; `tokens.ts` mirrors the same values for
+  TypeScript consumers, with a sync test guarding drift. Raw color values exist only
+  in those two theme files — never in components (no `bg-[#101218]`-style arbitrary
+  values).
 - **No external fonts in MVP** — system-available stacks only:
   - UI: `Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`
   - Mono: `"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace`
@@ -103,6 +111,16 @@ whole set from a new 1024 px master — never hand-edit individual sizes.
 Do **not** import logo files or hardcode logo asset paths anywhere outside
 `LogoMark.tsx` (or future brand utilities). Components render brand imagery only
 through `LogoMark`.
+
+## Responsive UI
+
+The brand lives in resizable desktop windows (not mobile web). Layouts must stay
+calm and usable from 900×650 (best-effort) and 1024×700 (minimum supported) up to
+1440px+: single intentional scroll region per screen, wrapping/collapsing toolbars,
+truncating text instead of breaking layout, readability capped with `max-w-*` rather
+than fixed widths, and the wordmark/tagline truncating or yielding before the mark
+does. See `docs/architecture.md` → "Desktop responsive layout foundation" for the
+mechanics.
 
 ## Hard rules
 

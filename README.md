@@ -104,6 +104,7 @@ Keeping the app local-first also improves trust. Developers do not need to uploa
 - **Package manager/runtime:** Bun
 - **Build tool:** Vite
 - **Desktop backend:** Rust through Tauri commands
+- **Styling:** Tailwind CSS v4 over centralized design tokens (`src/theme/`), dark theme only for MVP — see `docs/architecture.md`
 
 ### Planned runtime stack
 

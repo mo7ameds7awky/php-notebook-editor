@@ -1,0 +1,129 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useNotebookStore } from "./notebookStore";
+import { IpcError } from "../ipc/invoke";
+import type { Notebook } from "../types/notebook";
+
+vi.mock("../ipc", () => ({
+  loadNotebook: vi.fn(),
+  saveNotebook: vi.fn(),
+}));
+
+import { loadNotebook, saveNotebook } from "../ipc";
+
+const mockLoad = vi.mocked(loadNotebook);
+const mockSave = vi.mocked(saveNotebook);
+
+const sampleNotebook = (): Notebook => ({
+  schemaVersion: 1,
+  title: "Sample",
+  cells: [],
+  envVars: [],
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  useNotebookStore.getState().close();
+});
+
+describe("createNew", () => {
+  it("writes a fresh file and holds a clean session", async () => {
+    mockSave.mockResolvedValue({ fileMtimeMs: 111 });
+    await useNotebookStore.getState().createNew("/x/new.pnb.json", "new");
+    expect(mockSave).toHaveBeenCalledWith(
+      "/x/new.pnb.json",
+      expect.objectContaining({ title: "new", schemaVersion: 1 }),
+      null,
+    );
+    const state = useNotebookStore.getState();
+    expect(state.path).toBe("/x/new.pnb.json");
+    expect(state.fileMtimeMs).toBe(111);
+    expect(state.dirty).toBe(false);
+  });
+});
+
+describe("openFromPath", () => {
+  it("loads a notebook into a clean session", async () => {
+    mockLoad.mockResolvedValue({ notebook: sampleNotebook(), fileMtimeMs: 42 });
+    await useNotebookStore.getState().openFromPath("/x/s.pnb.json");
+    const state = useNotebookStore.getState();
+    expect(state.notebook?.title).toBe("Sample");
+    expect(state.fileMtimeMs).toBe(42);
+    expect(state.dirty).toBe(false);
+  });
+
+  it("propagates load failures untouched", async () => {
+    mockLoad.mockRejectedValue(
+      new IpcError({ command: "load_notebook", code: "fileNotFound", message: "gone" }),
+    );
+    await expect(useNotebookStore.getState().openFromPath("/x/gone.pnb.json")).rejects.toMatchObject(
+      { code: "fileNotFound", command: "load_notebook" },
+    );
+    expect(useNotebookStore.getState().notebook).toBeNull();
+  });
+});
+
+describe("editing and saving", () => {
+  beforeEach(async () => {
+    mockLoad.mockResolvedValue({ notebook: sampleNotebook(), fileMtimeMs: 42 });
+    await useNotebookStore.getState().openFromPath("/x/s.pnb.json");
+  });
+
+  it("setTitle marks the session dirty", () => {
+    useNotebookStore.getState().setTitle("Renamed");
+    const state = useNotebookStore.getState();
+    expect(state.notebook?.title).toBe("Renamed");
+    expect(state.dirty).toBe(true);
+  });
+
+  it("save sends the stored mtime and clears dirty", async () => {
+    useNotebookStore.getState().setTitle("Renamed");
+    mockSave.mockResolvedValue({ fileMtimeMs: 99 });
+    await useNotebookStore.getState().save();
+    expect(mockSave).toHaveBeenCalledWith(
+      "/x/s.pnb.json",
+      expect.objectContaining({ title: "Renamed" }),
+      42,
+    );
+    const state = useNotebookStore.getState();
+    expect(state.fileMtimeMs).toBe(99);
+    expect(state.dirty).toBe(false);
+  });
+
+  it("a conflict keeps the session dirty and the mtime unchanged", async () => {
+    useNotebookStore.getState().setTitle("Renamed");
+    mockSave.mockRejectedValue(
+      new IpcError({ command: "save_notebook", code: "conflictOnDisk", message: "changed" }),
+    );
+    await expect(useNotebookStore.getState().save()).rejects.toMatchObject({
+      code: "conflictOnDisk",
+    });
+    const state = useNotebookStore.getState();
+    expect(state.dirty).toBe(true);
+    expect(state.fileMtimeMs).toBe(42);
+  });
+
+  it("forceSave overwrites without an mtime assertion", async () => {
+    mockSave.mockResolvedValue({ fileMtimeMs: 120 });
+    await useNotebookStore.getState().forceSave();
+    expect(mockSave).toHaveBeenCalledWith("/x/s.pnb.json", expect.anything(), null);
+    expect(useNotebookStore.getState().fileMtimeMs).toBe(120);
+  });
+
+  it("saveAs adopts the new path", async () => {
+    mockSave.mockResolvedValue({ fileMtimeMs: 7 });
+    await useNotebookStore.getState().saveAs("/y/copy.pnb.json");
+    expect(mockSave).toHaveBeenCalledWith("/y/copy.pnb.json", expect.anything(), null);
+    const state = useNotebookStore.getState();
+    expect(state.path).toBe("/y/copy.pnb.json");
+    expect(state.dirty).toBe(false);
+  });
+
+  it("close resets the session", () => {
+    useNotebookStore.getState().setTitle("Renamed");
+    useNotebookStore.getState().close();
+    const state = useNotebookStore.getState();
+    expect(state.notebook).toBeNull();
+    expect(state.path).toBeNull();
+    expect(state.dirty).toBe(false);
+  });
+});

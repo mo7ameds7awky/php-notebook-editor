@@ -9,6 +9,8 @@ import { HTTP_METHODS } from "../../types/notebook";
 import { HTTP_TIMEOUT_MAX_MS, HTTP_TIMEOUT_MIN_MS } from "../../lib/config";
 import { CodeEditor } from "../common/CodeEditor";
 import { Button } from "../common/Button";
+import { EnvAwareInput } from "../env/EnvAwareInput";
+import { InterpolatedTextPreview } from "../env/InterpolatedTextPreview";
 import { HttpResultView } from "./HttpResultView";
 import { ImportCurlDialog } from "./ImportCurlDialog";
 import type { ParsedCurlRequest } from "../../lib/curlImport";
@@ -81,13 +83,15 @@ export function HttpCell({ cell, onChangeRequest, running, onRun, onCancel }: Ht
             </option>
           ))}
         </select>
-        <input
-          className={`${FIELD_CLASSES} min-w-40 flex-1 font-mono`}
+        <EnvAwareInput
+          className="min-w-40 flex-1"
+          inputClassName={`${FIELD_CLASSES} font-mono`}
           value={request.url}
-          onChange={(e) => patch({ url: e.target.value })}
+          onChange={(url) => patch({ url })}
           placeholder="https://api.example.test/path or {{base_url}}/path"
           aria-label="Request URL"
           spellCheck={false}
+          showPreview
         />
         <Button size="sm" onClick={() => setImportOpen(true)} disabled={running}>
           <ClipboardPaste size={12} aria-hidden />
@@ -123,13 +127,15 @@ export function HttpCell({ cell, onChangeRequest, running, onRun, onCancel }: Ht
               aria-label={`Header ${index + 1} name`}
               spellCheck={false}
             />
-            <input
-              className={`${FIELD_CLASSES} min-w-40 flex-1 font-mono`}
+            <EnvAwareInput
+              className="min-w-40 flex-1"
+              inputClassName={`${FIELD_CLASSES} font-mono`}
               value={header.value}
-              onChange={(e) => updateHeader(index, "value", e.target.value)}
+              onChange={(value) => updateHeader(index, "value", value)}
               placeholder="Value"
               aria-label={`Header ${index + 1} value`}
               spellCheck={false}
+              showPreview
             />
             <Button
               variant="ghost"
@@ -161,6 +167,7 @@ export function HttpCell({ cell, onChangeRequest, running, onRun, onCancel }: Ht
           onChange={(body) => patch({ body })}
           ariaLabel="Request body"
         />
+        <InterpolatedTextPreview text={request.body} />
       </div>
 
       <HttpResultView lastRun={cell.lastRun} running={running} />

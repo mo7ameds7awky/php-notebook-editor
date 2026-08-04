@@ -1,14 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: [template] → 1.0.0 (initial ratification)
-- Modified principles: n/a — template placeholders replaced with initial principle set
-- Added sections:
-  - Core Principles (I–V)
-  - Security & Execution Constraints
-  - Development Workflow & Quality Gates
-  - Governance
+- Version change: 1.0.0 → 1.1.0 (2026-08-04)
+- Modified principles: V. Clear, Honest UX — added responsive resizable-desktop-UI
+  requirement (materially expanded guidance → MINOR bump)
+- Added sections: none
 - Removed sections: none
 - Follow-up TODOs: none
+- Prior report (1.0.0, 2026-08-03): initial ratification — Core Principles I–V,
+  Security & Execution Constraints, Development Workflow & Quality Gates, Governance
 -->
 
 # PHP Notebook Editor Constitution
@@ -97,6 +96,10 @@ The interface MUST always tell the user what is happening and never lie by omiss
   confirmation.
 - Secrets and sensitive env values MUST be masked in the UI by default and MUST NOT
   appear in logs.
+- The UI MUST remain fully usable in resizable desktop windows: minimum supported
+  viewport 1024×700 (best-effort down to 900×650); no fixed app-shell dimensions;
+  content regions scroll intentionally; no important content may clip, and nothing
+  may overflow horizontally outside code/output areas.
 
 Rationale: a developer tool earns trust through predictability; unclear state around
 code execution and file mutation destroys that trust fastest.
@@ -149,4 +152,4 @@ These constraints apply to all features, current and future:
 - Runtime development guidance for agents and tooling (e.g., `CLAUDE.md`) MUST stay
   consistent with this constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-03 | **Last Amended**: 2026-08-03
+**Version**: 1.1.0 | **Ratified**: 2026-08-03 | **Last Amended**: 2026-08-04

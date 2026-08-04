@@ -1,4 +1,5 @@
-import { Plus, X } from "lucide-react";
+import { useState } from "react";
+import { ClipboardPaste, Play, Plus, Square, X } from "lucide-react";
 import type {
   HttpCell as HttpCellModel,
   HttpMethod,
@@ -8,20 +9,37 @@ import { HTTP_METHODS } from "../../types/notebook";
 import { HTTP_TIMEOUT_MAX_MS, HTTP_TIMEOUT_MIN_MS } from "../../lib/config";
 import { CodeEditor } from "../common/CodeEditor";
 import { Button } from "../common/Button";
+import { HttpResultView } from "./HttpResultView";
+import { ImportCurlDialog } from "./ImportCurlDialog";
+import type { ParsedCurlRequest } from "../../lib/curlImport";
 
 interface HttpCellProps {
   cell: HttpCellModel;
   onChangeRequest: (request: HttpRequestSpec) => void;
+  running: boolean;
+  onRun: () => void;
+  onCancel: () => void;
 }
 
 const FIELD_CLASSES =
   "rounded-md border border-default bg-subtle px-2 py-1.5 text-[13px] text-primary outline-none focus:border-strong";
 
-/** HTTP request authoring: method, URL, headers, body, timeout. */
-export function HttpCell({ cell, onChangeRequest }: HttpCellProps) {
+/** HTTP request authoring and execution: method, URL, headers, body, timeout, result. */
+export function HttpCell({ cell, onChangeRequest, running, onRun, onCancel }: HttpCellProps) {
   const { request } = cell;
+  const [importOpen, setImportOpen] = useState(false);
   const patch = (partial: Partial<HttpRequestSpec>) =>
     onChangeRequest({ ...request, ...partial });
+
+  function applyImport(parsed: ParsedCurlRequest) {
+    onChangeRequest({
+      method: parsed.method,
+      url: parsed.url,
+      headers: parsed.headers,
+      body: parsed.body,
+      timeoutMs: parsed.timeoutMs ?? request.timeoutMs,
+    });
+  }
 
   const timeoutSeconds = Math.round((request.timeoutMs ?? 30_000) / 1000);
 
@@ -40,6 +58,17 @@ export function HttpCell({ cell, onChangeRequest }: HttpCellProps) {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
+        {running ? (
+          <Button size="sm" onClick={onCancel} aria-label="Cancel request">
+            <Square size={12} aria-hidden />
+            Cancel
+          </Button>
+        ) : (
+          <Button variant="primary" size="sm" onClick={onRun} aria-label="Run request">
+            <Play size={12} aria-hidden />
+            Run
+          </Button>
+        )}
         <select
           className={FIELD_CLASSES}
           value={request.method}
@@ -60,6 +89,10 @@ export function HttpCell({ cell, onChangeRequest }: HttpCellProps) {
           aria-label="Request URL"
           spellCheck={false}
         />
+        <Button size="sm" onClick={() => setImportOpen(true)} disabled={running}>
+          <ClipboardPaste size={12} aria-hidden />
+          Import cURL
+        </Button>
         <label className="flex items-center gap-1.5 text-xs text-secondary">
           Timeout
           <input
@@ -130,9 +163,13 @@ export function HttpCell({ cell, onChangeRequest }: HttpCellProps) {
         />
       </div>
 
-      <div className="rounded-md border border-dashed border-subtle bg-subtle px-3 py-2 text-xs text-muted">
-        Response appears here once HTTP execution lands.
-      </div>
+      <HttpResultView lastRun={cell.lastRun} running={running} />
+
+      <ImportCurlDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={applyImport}
+      />
     </>
   );
 }

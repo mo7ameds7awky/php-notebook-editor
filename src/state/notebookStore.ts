@@ -1,6 +1,17 @@
 import { create } from "zustand";
-import type { CellType, HttpRequestSpec, HttpRunResult, Notebook } from "../types/notebook";
-import { createCell, createEmptyNotebook } from "../lib/notebook";
+import type {
+  CellType,
+  EnvVar,
+  HttpRequestSpec,
+  HttpRunResult,
+  Notebook,
+} from "../types/notebook";
+import {
+  createCell,
+  createEmptyNotebook,
+  validateEnvVarName,
+  type EnvVarNameError,
+} from "../lib/notebook";
 import { cancelRun, loadNotebook, runHttp, saveNotebook } from "../ipc";
 
 interface NotebookState {
@@ -29,6 +40,12 @@ interface NotebookState {
   updateCellSource: (id: string, source: string) => void;
   /** Replaces the request of an http cell. */
   updateHttpRequest: (id: string, request: HttpRequestSpec) => void;
+  /** Adds a variable; returns the name error and leaves state untouched when invalid. */
+  addEnvVar: (envVar: EnvVar) => EnvVarNameError | null;
+  /** Patches the variable with the given name; renames are re-validated. */
+  updateEnvVar: (name: string, patch: Partial<EnvVar>) => EnvVarNameError | null;
+  /** Removes a variable; cells referencing it simply become unresolved. */
+  deleteEnvVar: (name: string) => void;
   /** Runs an http cell; no-op while that cell is already running. */
   startHttpRun: (cellId: string) => Promise<void>;
   /** Best-effort cancellation of a cell's in-flight run. */
@@ -132,6 +149,39 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
       cell.id === id && cell.type === "http" ? { ...cell, request } : cell,
     );
     set({ notebook: { ...notebook, cells }, dirty: true });
+  },
+
+  addEnvVar: (envVar) => {
+    const { notebook } = get();
+    if (!notebook) return null;
+    const error = validateEnvVarName(envVar.name, notebook.envVars.map((v) => v.name));
+    if (error) return error;
+    set({ notebook: { ...notebook, envVars: [...notebook.envVars, envVar] }, dirty: true });
+    return null;
+  },
+
+  updateEnvVar: (name, patch) => {
+    const { notebook } = get();
+    if (!notebook) return null;
+    const index = notebook.envVars.findIndex((v) => v.name === name);
+    if (index < 0) return null;
+    const next = { ...notebook.envVars[index], ...patch };
+    if (next.name !== name) {
+      const otherNames = notebook.envVars.filter((_, i) => i !== index).map((v) => v.name);
+      const error = validateEnvVarName(next.name, otherNames);
+      if (error) return error;
+    }
+    const envVars = notebook.envVars.map((v, i) => (i === index ? next : v));
+    set({ notebook: { ...notebook, envVars }, dirty: true });
+    return null;
+  },
+
+  deleteEnvVar: (name) => {
+    const { notebook } = get();
+    if (!notebook) return;
+    const envVars = notebook.envVars.filter((v) => v.name !== name);
+    if (envVars.length === notebook.envVars.length) return;
+    set({ notebook: { ...notebook, envVars }, dirty: true });
   },
 
   startHttpRun: async (cellId) => {

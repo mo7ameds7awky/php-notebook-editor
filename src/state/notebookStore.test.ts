@@ -297,6 +297,91 @@ describe("cell mutations", () => {
     expect(useNotebookStore.getState().cellRuns[cellId]).toBeUndefined();
   });
 
+  it("env var CRUD adds, patches, and deletes with the dirty flag set", () => {
+    const store = useNotebookStore.getState();
+    expect(store.addEnvVar({ name: "base_url", value: "https://api.test", secret: false })).toBeNull();
+    expect(useNotebookStore.getState().dirty).toBe(true);
+
+    expect(useNotebookStore.getState().updateEnvVar("base_url", { value: "https://other.test" })).toBeNull();
+    expect(useNotebookStore.getState().notebook?.envVars).toEqual([
+      { name: "base_url", value: "https://other.test", secret: false },
+    ]);
+
+    expect(useNotebookStore.getState().updateEnvVar("base_url", { secret: true })).toBeNull();
+    expect(useNotebookStore.getState().notebook?.envVars[0].secret).toBe(true);
+
+    useNotebookStore.getState().deleteEnvVar("base_url");
+    expect(useNotebookStore.getState().notebook?.envVars).toEqual([]);
+  });
+
+  it("addEnvVar rejects invalid names without touching state", () => {
+    for (const name of ["", "1abc", "has space", "dash-ed", "brace{{d}}"]) {
+      expect(useNotebookStore.getState().addEnvVar({ name, value: "v", secret: false })).toBe(
+        "invalidName",
+      );
+    }
+    expect(useNotebookStore.getState().notebook?.envVars).toEqual([]);
+    expect(useNotebookStore.getState().dirty).toBe(false);
+  });
+
+  it("addEnvVar rejects duplicate names case-sensitively", () => {
+    const store = useNotebookStore.getState();
+    expect(store.addEnvVar({ name: "token", value: "a", secret: true })).toBeNull();
+    expect(useNotebookStore.getState().addEnvVar({ name: "token", value: "b", secret: false })).toBe(
+      "duplicateName",
+    );
+    expect(useNotebookStore.getState().addEnvVar({ name: "Token", value: "b", secret: false })).toBeNull();
+    expect(useNotebookStore.getState().notebook?.envVars.map((v) => v.name)).toEqual([
+      "token",
+      "Token",
+    ]);
+  });
+
+  it("updateEnvVar validates renames and keeps state on rejection", () => {
+    const store = useNotebookStore.getState();
+    store.addEnvVar({ name: "a", value: "1", secret: false });
+    useNotebookStore.getState().addEnvVar({ name: "b", value: "2", secret: false });
+
+    expect(useNotebookStore.getState().updateEnvVar("a", { name: "b" })).toBe("duplicateName");
+    expect(useNotebookStore.getState().updateEnvVar("a", { name: "9x" })).toBe("invalidName");
+    expect(useNotebookStore.getState().notebook?.envVars.map((v) => v.name)).toEqual(["a", "b"]);
+
+    expect(useNotebookStore.getState().updateEnvVar("a", { name: "renamed" })).toBeNull();
+    expect(useNotebookStore.getState().notebook?.envVars.map((v) => v.name)).toEqual([
+      "renamed",
+      "b",
+    ]);
+  });
+
+  it("updateEnvVar allows a same-name patch without a duplicate error", () => {
+    const store = useNotebookStore.getState();
+    store.addEnvVar({ name: "a", value: "1", secret: false });
+    expect(useNotebookStore.getState().updateEnvVar("a", { name: "a", value: "2" })).toBeNull();
+    expect(useNotebookStore.getState().notebook?.envVars[0].value).toBe("2");
+  });
+
+  it("updateEnvVar on an unknown name is a no-op", () => {
+    expect(useNotebookStore.getState().updateEnvVar("ghost", { value: "x" })).toBeNull();
+    expect(useNotebookStore.getState().dirty).toBe(false);
+  });
+
+  it("deleteEnvVar works while a cell still references the variable", () => {
+    const store = useNotebookStore.getState();
+    store.addCell("http");
+    const cell = cells()[0];
+    if (cell.type !== "http") throw new Error("expected http cell");
+    useNotebookStore.getState().updateHttpRequest(cell.id, {
+      ...cell.request,
+      url: "{{base_url}}/x",
+    });
+    useNotebookStore.getState().addEnvVar({ name: "base_url", value: "u", secret: false });
+
+    useNotebookStore.getState().deleteEnvVar("base_url");
+    expect(useNotebookStore.getState().notebook?.envVars).toEqual([]);
+    const after = cells()[0];
+    expect(after.type === "http" && after.request.url).toBe("{{base_url}}/x");
+  });
+
   it("updateHttpRequest replaces the request of the target cell", () => {
     const store = useNotebookStore.getState();
     store.addCell("http");

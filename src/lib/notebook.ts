@@ -117,6 +117,18 @@ export function validateNotebook(value: unknown): NotebookValidation {
   return { ok: true, notebook: value as unknown as Notebook };
 }
 
+export type EnvVarNameError = "invalidName" | "duplicateName";
+
+/** Validates an env var name against the identifier rule and sibling uniqueness. */
+export function validateEnvVarName(
+  name: string,
+  takenNames: readonly string[],
+): EnvVarNameError | null {
+  if (!ENV_VAR_NAME_PATTERN.test(name)) return "invalidName";
+  if (takenNames.includes(name)) return "duplicateName";
+  return null;
+}
+
 export function newCellId(): string {
   return crypto.randomUUID();
 }

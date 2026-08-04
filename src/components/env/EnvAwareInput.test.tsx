@@ -150,17 +150,35 @@ describe("EnvAwareInput autocomplete", () => {
     expect(el).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("renders the preview chips under the field", async () => {
+  it("shows the floating preview only while the field is focused", async () => {
     const user = userEvent.setup();
     render(<Harness initial="{{base_url}}/{{missing}}" />);
+    expect(screen.queryByText("{{base_url}}")).toBeNull();
+
+    await user.click(input());
     expect(screen.getByText("{{base_url}}")).toHaveAttribute(
       "title",
       "base_url = https://api.test",
     );
     expect(screen.getByText("{{missing}}")).toHaveAttribute("title", "missing is not defined");
 
-    // The preview is passive; clicking the input leaves it in place.
-    await user.click(input());
-    expect(screen.getByText("{{missing}}")).toBeInTheDocument();
+    await user.tab();
+    expect(screen.queryByText("{{base_url}}")).toBeNull();
+  });
+
+  it("hides the preview while the suggestion list is open", async () => {
+    const user = userEvent.setup();
+    render(<Harness initial="{{base_url}}/" />);
+    const el = input();
+    await user.click(el);
+    expect(screen.getByText("{{base_url}}")).toBeInTheDocument();
+
+    await user.type(el, "{{{{");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(screen.queryByText("{{base_url}}")).toBeNull();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).toBeNull();
+    expect(screen.getByText("{{base_url}}")).toBeInTheDocument();
   });
 });

@@ -68,7 +68,8 @@ beforeEach(() => {
 });
 
 describe("HttpCell env integration", () => {
-  it("previews placeholder status for url, header values, and body without leaking secrets", () => {
+  it("previews placeholder status for url, header values, and body without leaking secrets", async () => {
+    const user = userEvent.setup();
     const { container } = renderCell(
       cell({
         url: "{{base_url}}/users/{{missing}}",
@@ -77,12 +78,22 @@ describe("HttpCell env integration", () => {
       }),
     );
 
+    // The body preview is static below the editor.
+    expect(screen.getByText("{{token}}")).toHaveAttribute("title", "token = •••••••• Secret");
+
+    // URL and header previews float only while their field has focus.
+    await user.click(screen.getByRole("combobox", { name: "Request URL" }));
     expect(screen.getByText("{{base_url}}")).toHaveAttribute(
       "title",
       "base_url = https://api.test",
     );
     expect(screen.getByText("{{missing}}")).toHaveAttribute("title", "missing is not defined");
-    for (const chip of screen.getAllByText("{{token}}")) {
+
+    await user.click(screen.getByRole("combobox", { name: "Header 1 value" }));
+    expect(screen.queryByText("{{base_url}}")).toBeNull();
+    const tokenChips = screen.getAllByText("{{token}}");
+    expect(tokenChips).toHaveLength(2);
+    for (const chip of tokenChips) {
       expect(chip).toHaveAttribute("title", "token = •••••••• Secret");
     }
     expect(container.innerHTML).not.toContain("secret-123");

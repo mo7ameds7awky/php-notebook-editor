@@ -50,6 +50,7 @@ export function EnvAwareInput({
 
   const [active, setActive] = useState<ActivePlaceholder | null>(null);
   const [selected, setSelected] = useState(0);
+  const [focused, setFocused] = useState(false);
 
   const suggestions = active ? getEnvSuggestions(active.query, envVars) : [];
   const open = active !== null;
@@ -133,7 +134,11 @@ export function EnvAwareInput({
         onChange={handleChange}
         onSelect={handleSelect}
         onKeyDown={handleKeyDown}
-        onBlur={() => updateActive(null)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => {
+          setFocused(false);
+          updateActive(null);
+        }}
       />
       {open && (
         <ul
@@ -174,7 +179,13 @@ export function EnvAwareInput({
           ))}
         </ul>
       )}
-      {showPreview && <InterpolatedTextPreview text={value} className="mt-1" />}
+      {showPreview && focused && !open && (
+        <InterpolatedTextPreview
+          text={value}
+          focusableChips={false}
+          className="absolute left-0 top-full z-10 mt-1 w-full rounded-md border border-default bg-elevated px-2 py-1.5 shadow-lg"
+        />
+      )}
     </div>
   );
 }

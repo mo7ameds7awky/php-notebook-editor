@@ -18,12 +18,19 @@ function tooltipFor(segment: Extract<PlaceholderSegment, { kind: "placeholder" }
 interface InterpolatedTextPreviewProps {
   text: string;
   className?: string;
+  /** Disable for previews that appear/disappear with field focus, so tabbing
+   *  cannot land on a chip that is about to unmount. */
+  focusableChips?: boolean;
 }
 
 /** Inline preview of {{name}} tokens in a text: resolved tokens in info tone,
  *  missing tokens in warning tone, secrets never revealed. Renders nothing
  *  when the text has no valid placeholder. */
-export function InterpolatedTextPreview({ text, className = "" }: InterpolatedTextPreviewProps) {
+export function InterpolatedTextPreview({
+  text,
+  className = "",
+  focusableChips = true,
+}: InterpolatedTextPreviewProps) {
   const envVars = useNotebookStore((s) => s.notebook?.envVars ?? NO_VARS);
   const segments = tokenizePlaceholders(text, envVars);
   if (!segments.some((segment) => segment.kind === "placeholder")) return null;
@@ -36,7 +43,7 @@ export function InterpolatedTextPreview({ text, className = "" }: InterpolatedTe
         ) : (
           <span
             key={index}
-            tabIndex={0}
+            tabIndex={focusableChips ? 0 : undefined}
             title={tooltipFor(segment)}
             aria-label={tooltipFor(segment)}
             className={`rounded border px-1 py-0.5 ${CHIP_CLASSES[segment.status]}`}

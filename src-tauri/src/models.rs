@@ -212,6 +212,12 @@ pub struct ListRecentsResult {
     pub entries: Vec<RecentEntry>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CancelRunResult {
+    pub cancelled: bool,
+}
+
 impl CommandError {
     pub fn new(code: ErrorCode, message: impl Into<String>) -> Self {
         Self {

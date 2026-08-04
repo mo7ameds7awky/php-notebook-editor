@@ -234,6 +234,95 @@ and the existing scaffold (Tauri 2, React 19, TypeScript 5.8, Vite 7, Bun).
   CSS-in-JS/theming library (runtime + dependency cost unwarranted for one fixed
   theme); user-selectable themes now (explicitly out of MVP scope).
 
+## D18: Styling — Tailwind CSS v4 over centralized tokens, no heavy UI framework
+
+- **Decision**: Tailwind CSS v4 (`tailwindcss` + `@tailwindcss/vite`, CSS-first — no
+  `tailwind.config.js`) styles all UI. `src/theme/theme.css` is the styling entry:
+  `--pnb-*` design-token variables, an `@theme inline` block mapping them to semantic
+  Tailwind colors (bg-app/surface/elevated/subtle, text-primary/secondary/muted,
+  brand triplet, status colors, cell accents, code surfaces, scrim), and `@utility`
+  definitions for `border-subtle/default/strong` (border palette differs from the
+  background palette, so borders get dedicated utilities). `tokens.ts` remains the
+  TypeScript mirror (SVG fills, future editor themes) with a css↔ts sync test.
+  Components use semantic utilities + small internal primitives (`Button`, `Panel`,
+  `Badge`, dialogs). Raw hex/arbitrary color classes (`bg-[#101218]`) are forbidden
+  in components. Dark theme only; no user-facing theme settings.
+- **Rationale**: utility styling with token backing keeps visual decisions in one
+  place, stays light for a desktop webview, and avoids framework lock-in while the
+  product's look is still forming.
+- **Alternatives considered**: Material UI / Ant / Bootstrap / Chakra / full
+  shadcn/ui (all rejected — weight, generic-SaaS look, theme-system conflicts);
+  hand-rolled CSS files (rejected — the US1 shell already showed class sprawl);
+  Radix UI now (deferred — adopt later only for accessibility-heavy primitives like
+  dialogs/menus/popovers if needed).
+
+## D19: Frontend foundation libraries — lucide, Radix dialog, zod, jest-dom
+
+- **Decision**: `lucide-react` is the single icon library (no mixed packs).
+  `@radix-ui/react-dialog` powers confirm/error modals for managed focus/escape/
+  aria; other Radix primitives adopted later only if accessibility demands (no full
+  shadcn/ui). `zod` validates notebook data, env vars, and frontend payloads on the
+  TS side — Rust remains authoritative for file/command validation via serde +
+  explicit checks. `@testing-library/jest-dom` matchers load via Vitest setup file.
+- **Rationale**: small, tree-shakeable, focused libraries; dialog a11y is hard to
+  hand-roll correctly; zod gives typed, explainable frontend failures without
+  weakening the Rust boundary.
+- **Alternatives considered**: heroicons/react-icons (mixing risk), hand-rolled
+  modals (focus-trap bugs), valibot (ecosystem maturity), full shadcn/ui (rejected
+  per D18).
+
+## D20: Frontend error mapping layer
+
+- **Decision**: `src/lib/errors.ts` converts every `CommandError` code + originating
+  command into `{ title, message, severity, detail }`. Raw technical text appears
+  only inside a "Technical details" disclosure. Recovery flows (conflict overwrite,
+  missing-file save-as) remain explicit component branches.
+- **Rationale**: Principle V — actionable, non-technical failures; single place to
+  keep tone consistent.
+- **Alternatives considered**: per-component ad-hoc messages (drift, already
+  duplicated twice in US1).
+
+## D21: Centralized configuration modules
+
+- **Decision**: no settings UI yet; defaults live in `src-tauri/src/config.rs`
+  (PHP image + `PNB_PHP_IMAGE` override, HTTP/PHP timeouts, output caps, recents
+  limit) and `src/lib/config.ts` (frontend defaults). Consumers import from there
+  only.
+- **Rationale**: one change-point per default; pre-wires the future settings
+  surface.
+- **Alternatives considered**: scattered constants (drift — recents cap already
+  lived inside the service).
+
+## D22: Explicit MVP non-adoptions + baseline a11y + changelog
+
+- **Decision**: no React Router (view state suffices for 2 views), no React
+  Query/TanStack (typed IPC + Zustand actions), no Redux. Baseline accessibility is
+  binding: keyboard-accessible controls, visible focus rings, labelled inputs,
+  managed dialog focus, no color-only status indicators, reduced-motion awareness.
+  `CHANGELOG.md` follows Keep a Changelog with an Unreleased section.
+- **Rationale**: two views and nine commands don't justify routing/query
+  machinery; a11y is cheaper enforced from the start; changelog keeps release notes
+  honest.
+- **Alternatives considered**: adopting router/query "for later" (YAGNI —
+  Principle IV).
+
+## D23: Responsive desktop layout foundation
+
+- **Decision**: resizable-desktop responsiveness is a binding foundation
+  (constitution v1.1.0, Principle V): minimum 1024×700, best-effort 900×650,
+  targets 1280×800 and 1440px+. Full-viewport shell (`h-screen w-screen
+  overflow-hidden`), one intentional scroll region per screen, `min-w-0`/`min-h-0`
+  on shrinkable flex/grid children, wrapping/collapsing toolbars, responsive card
+  grids, viewport-fitted dialogs with internal scroll, truncation over layout
+  breakage, pixel values only for icons/small controls/`max-w-*` caps. Editors and
+  outputs scroll internally. Tauri-only APIs are feature-guarded so screens render
+  in a plain browser for viewport verification.
+- **Rationale**: desktop windows are freely resized; a notebook tool that clips at
+  compact sizes violates Principle V's honesty about state and content.
+- **Alternatives considered**: fixed-size window (rejected — hostile to real
+  desktop use); mobile-first breakpoints (wrong domain; breakpoints used only where
+  desktop widths genuinely diverge).
+
 ## Resolved unknowns summary
 
 | Area | Resolution |

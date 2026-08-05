@@ -129,6 +129,37 @@ async fn memory_bomb_is_terminated_by_the_container_limit() {
 
 #[tokio::test]
 #[ignore]
+async fn php_export_fixtures_parse_in_the_sandbox() {
+    let fixtures: serde_json::Value =
+        serde_json::from_str(include_str!("../../specs/002-usability-polish/contracts/fixtures/php-export.json"))
+            .expect("fixture file must parse");
+
+    for fixture in fixtures.as_array().expect("fixture root must be an array") {
+        let name = fixture["name"].as_str().expect("fixture name");
+        let php = fixture["php"].as_str().expect("fixture php");
+        let code = format!("<?php $x = {php}; echo \"ok:{name}\";");
+
+        let result = run_php(
+            &format!("it-phpexport-{name}"),
+            &code,
+            limits(30_000),
+            no_cancel(),
+        )
+        .await
+        .expect("run must complete");
+
+        assert_eq!(
+            result.status,
+            PhpRunStatus::Succeeded,
+            "fixture {name} must parse; stderr: {}",
+            result.stderr
+        );
+        assert_eq!(result.stdout, format!("ok:{name}"));
+    }
+}
+
+#[tokio::test]
+#[ignore]
 async fn cancellation_kills_the_run_and_reports_cancelled() {
     let (tx, rx) = oneshot::channel();
     let handle = tokio::spawn(run_php(

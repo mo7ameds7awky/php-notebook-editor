@@ -5,6 +5,7 @@ import type {
   HttpRequestSpec,
   HttpRunResult,
   Notebook,
+  PhpRunResult,
 } from "../types/notebook";
 import {
   createCell,
@@ -17,7 +18,7 @@ import {
   resolveRequest,
   UnresolvedPlaceholdersError,
 } from "../lib/interpolate";
-import { cancelRun, loadNotebook, runHttp, saveNotebook } from "../ipc";
+import { cancelRun, loadNotebook, runHttp, runPhp, saveNotebook } from "../ipc";
 
 interface NotebookState {
   notebook: Notebook | null;
@@ -53,6 +54,8 @@ interface NotebookState {
   deleteEnvVar: (name: string) => void;
   /** Runs an http cell; no-op while that cell is already running. */
   startHttpRun: (cellId: string) => Promise<void>;
+  /** Runs a php cell in the sandbox; source passes through uninterpreted. */
+  startPhpRun: (cellId: string) => Promise<void>;
   /** Best-effort cancellation of a cell's in-flight run. */
   cancelCellRun: (cellId: string) => void;
   close: () => void;
@@ -223,6 +226,38 @@ export const useNotebookStore = create<NotebookState>((set, get) => ({
     if (!current) return;
     const cells = current.cells.map((c) =>
       c.id === cellId && c.type === "http" ? { ...c, lastRun: result } : c,
+    );
+    set({ notebook: { ...current, cells }, dirty: true });
+  },
+
+  startPhpRun: async (cellId) => {
+    const { notebook, cellRuns } = get();
+    if (!notebook || cellRuns[cellId]) return;
+    const cell = notebook.cells.find((c) => c.id === cellId);
+    if (!cell || cell.type !== "php") return;
+
+    const runId = crypto.randomUUID();
+    set({ cellRuns: { ...get().cellRuns, [cellId]: { runId } } });
+
+    const clearRunning = () => {
+      const runs = { ...get().cellRuns };
+      delete runs[cellId];
+      set({ cellRuns: runs });
+    };
+
+    let result: PhpRunResult;
+    try {
+      result = await runPhp(runId, cell.source);
+    } catch (e) {
+      clearRunning();
+      throw e;
+    }
+    clearRunning();
+
+    const current = get().notebook;
+    if (!current) return;
+    const cells = current.cells.map((c) =>
+      c.id === cellId && c.type === "php" ? { ...c, lastRun: result } : c,
     );
     set({ notebook: { ...current, cells }, dirty: true });
   },

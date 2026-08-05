@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { Cell } from "../../types/notebook";
 import { useNotebookStore } from "../../state/notebookStore";
+import { useAppStore } from "../../state/appStore";
 import { describeError, type UserFacingError } from "../../lib/errors";
+import { IpcError } from "../../ipc/invoke";
 import { ErrorDialog } from "../common/ErrorDialog";
 import { CellFrame } from "./CellFrame";
 import { MarkdownCell } from "./MarkdownCell";
@@ -21,10 +23,20 @@ export function CellView({ cell, index, count, onRequestDelete }: CellViewProps)
   const updateCellSource = useNotebookStore((s) => s.updateCellSource);
   const updateHttpRequest = useNotebookStore((s) => s.updateHttpRequest);
   const startHttpRun = useNotebookStore((s) => s.startHttpRun);
+  const startPhpRun = useNotebookStore((s) => s.startPhpRun);
   const cancelCellRun = useNotebookStore((s) => s.cancelCellRun);
   const running = useNotebookStore((s) => s.cellRuns[cell.id] !== undefined);
+  const runtimeHealth = useAppStore((s) => s.runtimeHealth);
 
   const [runError, setRunError] = useState<UserFacingError | null>(null);
+
+  function handlePhpRunError(e: unknown) {
+    setRunError(describeError(e));
+    // A run-time probe failure means the banner state is stale — resync it.
+    if (e instanceof IpcError && e.code === "runtimeUnavailable") {
+      void useAppStore.getState().refreshRuntimeHealth();
+    }
+  }
 
   function body() {
     switch (cell.type) {
@@ -33,7 +45,23 @@ export function CellView({ cell, index, count, onRequestDelete }: CellViewProps)
           <MarkdownCell cell={cell} onChangeSource={(s) => updateCellSource(cell.id, s)} />
         );
       case "php":
-        return <PhpCell cell={cell} onChangeSource={(s) => updateCellSource(cell.id, s)} />;
+        return (
+          <PhpCell
+            cell={cell}
+            onChangeSource={(s) => updateCellSource(cell.id, s)}
+            running={running}
+            onRun={() => void startPhpRun(cell.id).catch(handlePhpRunError)}
+            onCancel={() => cancelCellRun(cell.id)}
+            canRun={runtimeHealth?.status === "ok"}
+            runDisabledReason={
+              runtimeHealth === null
+                ? "Checking the PHP runtime…"
+                : runtimeHealth.status !== "ok"
+                  ? "PHP runtime unavailable — see the banner above."
+                  : undefined
+            }
+          />
+        );
       case "http":
         return (
           <HttpCell

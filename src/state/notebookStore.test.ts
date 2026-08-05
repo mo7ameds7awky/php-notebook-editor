@@ -8,14 +8,16 @@ vi.mock("../ipc", () => ({
   loadNotebook: vi.fn(),
   saveNotebook: vi.fn(),
   runHttp: vi.fn(),
+  runPhp: vi.fn(),
   cancelRun: vi.fn(),
 }));
 
-import { cancelRun, loadNotebook, runHttp, saveNotebook } from "../ipc";
+import { cancelRun, loadNotebook, runHttp, runPhp, saveNotebook } from "../ipc";
 
 const mockLoad = vi.mocked(loadNotebook);
 const mockSave = vi.mocked(saveNotebook);
 const mockRunHttp = vi.mocked(runHttp);
+const mockRunPhp = vi.mocked(runPhp);
 const mockCancelRun = vi.mocked(cancelRun);
 
 const sampleNotebook = (): Notebook => ({
@@ -399,6 +401,105 @@ describe("cell mutations", () => {
       request: { method: "POST", url: "https://example.test" },
     });
     expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+});
+
+describe("startPhpRun", () => {
+  beforeEach(async () => {
+    mockLoad.mockResolvedValue({ notebook: sampleNotebook(), fileMtimeMs: 42 });
+    await useNotebookStore.getState().openFromPath("/x/s.pnb.json");
+    useNotebookStore.getState().addCell("php");
+  });
+
+  const phpCell = () => {
+    const cell = useNotebookStore.getState().notebook?.cells[0];
+    if (cell?.type !== "php") throw new Error("expected php cell");
+    return cell;
+  };
+
+  it("passes the source through untouched and persists the terminal result", async () => {
+    const cell = phpCell();
+    useNotebookStore.getState().updateCellSource(cell.id, '<?php echo "{{not_interpolated}}";');
+    mockRunPhp.mockResolvedValue({
+      status: "succeeded",
+      stdout: "hi",
+      stderr: "",
+      exitCode: 0,
+      truncated: false,
+      durationMs: 8,
+      ranAt: "2026-08-05T10:00:00Z",
+    });
+
+    await useNotebookStore.getState().startPhpRun(cell.id);
+
+    expect(mockRunPhp).toHaveBeenCalledWith(
+      expect.any(String),
+      '<?php echo "{{not_interpolated}}";',
+    );
+    expect(phpCell().lastRun?.status).toBe("succeeded");
+    expect(useNotebookStore.getState().cellRuns[cell.id]).toBeUndefined();
+    expect(useNotebookStore.getState().dirty).toBe(true);
+  });
+
+  it("blocks duplicate runs while the cell is running", async () => {
+    const cell = phpCell();
+    let release!: (r: import("../types/notebook").PhpRunResult) => void;
+    mockRunPhp.mockImplementation(() => new Promise((resolve) => (release = resolve)));
+
+    const first = useNotebookStore.getState().startPhpRun(cell.id);
+    expect(useNotebookStore.getState().cellRuns[cell.id]).toBeDefined();
+    await useNotebookStore.getState().startPhpRun(cell.id);
+    expect(mockRunPhp).toHaveBeenCalledTimes(1);
+
+    release({
+      status: "cancelled",
+      stdout: "",
+      stderr: "",
+      truncated: false,
+      durationMs: 1,
+      ranAt: "2026-08-05T10:00:00Z",
+    });
+    await first;
+    expect(useNotebookStore.getState().cellRuns[cell.id]).toBeUndefined();
+  });
+
+  it("clears the running state and propagates a runtimeUnavailable error", async () => {
+    const cell = phpCell();
+    mockRunPhp.mockRejectedValue(
+      new IpcError({
+        command: "run_php",
+        code: "runtimeUnavailable",
+        message: "daemon down",
+      }),
+    );
+
+    await expect(useNotebookStore.getState().startPhpRun(cell.id)).rejects.toMatchObject({
+      code: "runtimeUnavailable",
+    });
+    expect(useNotebookStore.getState().cellRuns[cell.id]).toBeUndefined();
+    expect(phpCell().lastRun).toBeFalsy();
+  });
+
+  it("cancelCellRun forwards the active php runId", async () => {
+    const cell = phpCell();
+    let release!: (r: import("../types/notebook").PhpRunResult) => void;
+    mockRunPhp.mockImplementation(() => new Promise((resolve) => (release = resolve)));
+    mockCancelRun.mockResolvedValue({ cancelled: true });
+
+    const pending = useNotebookStore.getState().startPhpRun(cell.id);
+    const { runId } = useNotebookStore.getState().cellRuns[cell.id];
+    useNotebookStore.getState().cancelCellRun(cell.id);
+    expect(mockCancelRun).toHaveBeenCalledWith(runId);
+
+    release({
+      status: "cancelled",
+      stdout: "",
+      stderr: "",
+      truncated: false,
+      durationMs: 1,
+      ranAt: "2026-08-05T10:00:00Z",
+    });
+    await pending;
   });
 });
 

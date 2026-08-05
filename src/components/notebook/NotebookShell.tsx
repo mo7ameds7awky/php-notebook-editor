@@ -5,6 +5,7 @@ import { LogoMark } from "../common/LogoMark";
 import { Button } from "../common/Button";
 import { CellList } from "./CellList";
 import { EnvPanel } from "../env/EnvPanel";
+import { RuntimeHealthBanner } from "../common/RuntimeHealthBanner";
 import { ConfirmDialog } from "../common/ConfirmDialog";
 import { ErrorDialog } from "../common/ErrorDialog";
 import { useAppStore } from "../../state/appStore";
@@ -106,6 +107,7 @@ export function NotebookShell() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+        <RuntimeHealthBanner />
         <EnvPanel />
         <CellList />
       </div>

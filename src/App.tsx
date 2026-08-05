@@ -17,6 +17,11 @@ function App() {
 
   useEffect(() => {
     if (!isTauri) return;
+    void useAppStore.getState().refreshRuntimeHealth();
+  }, []);
+
+  useEffect(() => {
+    if (!isTauri) return;
     const win = getCurrentWindow();
     const unlisten = win.onCloseRequested((event) => {
       if (!allowClose.current && useNotebookStore.getState().dirty) {

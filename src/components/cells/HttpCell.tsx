@@ -170,7 +170,7 @@ export function HttpCell({ cell, onChangeRequest, running, onRun, onCancel }: Ht
         <InterpolatedTextPreview text={request.body} />
       </div>
 
-      <HttpResultView lastRun={cell.lastRun} running={running} />
+      <HttpResultView request={request} lastRun={cell.lastRun} running={running} />
 
       <ImportCurlDialog
         open={importOpen}

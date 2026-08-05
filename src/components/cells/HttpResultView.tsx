@@ -1,5 +1,11 @@
 import { Loader2 } from "lucide-react";
-import type { HttpRunResult } from "../../types/notebook";
+import type { HttpRequestSpec, HttpRunResult } from "../../types/notebook";
+import { deriveResponseMeta } from "../../lib/responseMeta";
+import {
+  explainHttpStatus,
+  explainTransportFailure,
+  httpStatusText,
+} from "../../lib/httpExplain";
 import { Badge, type BadgeTone } from "../common/Badge";
 
 function statusTone(statusCode: number): BadgeTone {
@@ -23,13 +29,59 @@ const FAILURE_TONE: Record<string, BadgeTone> = {
   invalidRequest: "danger",
 };
 
+function formatRanAt(ranAt: string): string {
+  const date = new Date(ranAt);
+  if (Number.isNaN(date.getTime())) return ranAt;
+  return date.toLocaleString();
+}
+
+/** Shared metadata line: authored request identity plus run facts. The URL is
+ *  always the authored one — placeholders as written, resolved values never
+ *  shown here. */
+function SummaryLine({
+  request,
+  lastRun,
+  extras,
+}: {
+  request: HttpRequestSpec;
+  lastRun: HttpRunResult;
+  extras?: string[];
+}) {
+  const parts = [`${lastRun.durationMs} ms`, ...(extras ?? [])];
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+      <span className="font-mono font-medium text-secondary">{request.method}</span>
+      <span className="min-w-0 max-w-full truncate font-mono" title={request.url}>
+        {request.url || "(no URL)"}
+      </span>
+      <span className="shrink-0">
+        {parts.join(" · ")}
+        {" · "}
+        <time dateTime={lastRun.ranAt} title={lastRun.ranAt}>
+          {formatRanAt(lastRun.ranAt)}
+        </time>
+      </span>
+    </div>
+  );
+}
+
+/** Static one-line explanation; never replaces the raw status or body. */
+function ExplanationLine({ text }: { text: string | null }) {
+  if (!text) return null;
+  return <p className="text-xs text-info">{text}</p>;
+}
+
 interface HttpResultViewProps {
+  /** The authored request spec — the URL keeps its {{placeholders}}. */
+  request: HttpRequestSpec;
   lastRun: HttpRunResult | null | undefined;
   running: boolean;
 }
 
-/** Renders the latest HTTP run: response with status, or a transport failure. */
-export function HttpResultView({ lastRun, running }: HttpResultViewProps) {
+/** Renders the latest HTTP run with a metadata summary: HTTP responses (any
+ *  status code) stay visually distinct from transport failures, and the raw
+ *  body remains fully visible. */
+export function HttpResultView({ request, lastRun, running }: HttpResultViewProps) {
   if (running) {
     return (
       <div className="flex items-center gap-2 rounded-md border border-subtle bg-subtle px-3 py-2 text-xs text-secondary">
@@ -53,10 +105,16 @@ export function HttpResultView({ lastRun, running }: HttpResultViewProps) {
       <div className="flex min-w-0 flex-col gap-1.5 rounded-md border border-subtle bg-subtle p-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={FAILURE_TONE[kind] ?? "danger"}>{FAILURE_LABEL[kind] ?? "Failed"}</Badge>
-          <span className="text-xs text-muted">
-            transport failure — no HTTP response · {lastRun.durationMs} ms
-          </span>
+          <span className="text-xs text-muted">transport failure — no HTTP response</span>
         </div>
+        <SummaryLine request={request} lastRun={lastRun} />
+        <ExplanationLine
+          text={
+            lastRun.error
+              ? explainTransportFailure(lastRun.error.kind)
+              : explainTransportFailure("network")
+          }
+        />
         {lastRun.error?.message && (
           <p className="break-words font-mono text-xs text-secondary">{lastRun.error.message}</p>
         )}
@@ -65,13 +123,22 @@ export function HttpResultView({ lastRun, running }: HttpResultViewProps) {
   }
 
   const { response } = lastRun;
+  const meta = deriveResponseMeta(response);
+  const statusText = httpStatusText(response.statusCode);
+  const metaExtras = [meta.sizeLabel, ...(meta.contentType ? [meta.contentType] : [])];
+
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-subtle bg-subtle p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={statusTone(response.statusCode)}>HTTP {response.statusCode}</Badge>
-        <span className="text-xs text-muted">{lastRun.durationMs} ms</span>
+        <Badge tone={statusTone(response.statusCode)}>
+          HTTP {response.statusCode}
+          {statusText ? ` ${statusText}` : ""}
+        </Badge>
         {response.bodyTruncated && <Badge tone="warning">Truncated</Badge>}
       </div>
+
+      <SummaryLine request={request} lastRun={lastRun} extras={metaExtras} />
+      <ExplanationLine text={explainHttpStatus(response.statusCode)} />
 
       {response.headers.length > 0 && (
         <details className="min-w-0 text-xs">

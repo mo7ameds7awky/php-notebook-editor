@@ -8,9 +8,12 @@
 Build the Phase 2 usability slice on top of the shipped Phase 1 architecture with
 zero contract or schema churn: a rich HTTP result viewer (metadata summary, friendly
 error explanations), Tree/Pretty/Raw/Headers view modes with a guarded JSON tree,
-copy/export actions including copy-as-PHP-array, a guided runtime setup path (Home
-status card, actionable remedies, pull progress), and a three-notebook example
-library opened via an open-a-copy flow. All inspection logic lands as pure
+copy/export actions including copy-as-PHP-array (valid JSON objects/arrays only,
+explicit user action, copies exactly what the action names), a guided runtime setup
+path (Home status card, actionable remedies, pull progress — links and explanations
+only, no Docker installer/updater), and a three-notebook example library opened via
+an open-a-copy flow (safe public/local/placeholder endpoints, placeholder secrets
+only). All inspection logic lands as pure
 `src/lib/**` modules per Constitution Principle III; all rendering mounts inside the
 existing `HttpResultView` seam identified in Phase 1's forward-compatibility notes.
 
@@ -61,9 +64,10 @@ request/response stays identical, so both mirrors are untouched.
 src/lib/
 ├── responseMeta.ts        # size/content-type/JSON-validity derivation (+ tests)
 ├── jsonTree.ts            # safe parse + typed tree model, depth/size guards (+ tests)
-├── phpExport.ts           # JSON → PHP array literal, escaping (+ tests)
-├── httpExplain.ts         # status → friendly explanation map (+ tests)
-└── clipboard.ts           # copy wrapper w/ graceful failure (+ tests)
+├── phpExport.ts           # JSON object/array → PHP array literal, escaping (+ tests)
+├── httpExplain.ts         # static status→explanation copy map — deterministic,
+│                          #   keyed on code/kind only, never body-derived (+ tests)
+└── clipboard.ts           # explicit-action copy wrapper w/ graceful failure (+ tests)
 
 src/components/cells/
 ├── HttpResultView.tsx     # becomes the viewer shell: summary row + view tabs
@@ -88,7 +92,7 @@ src-tauri/src/services/docker.rs   # (optional) pull progress line parsing + eve
 |------|------------|
 | Webview clipboard permission varies by platform | T001 spike decides mechanism before any UI work; plugin fallback is write-only and constitution-checked |
 | `docker pull` output parsing is brittle across Docker versions | Streamed progress is best-effort; staged progress is the contract-satisfying fallback; parser isolated + unit-tested on captured samples |
-| Large/deep JSON tree jank | Pure tree model with depth guard + lazy expansion + expand-all clamp; virtualization only if SC-201 fails without it |
+| Large/deep JSON tree jank | Pure tree model with hard depth limits + node-count guards + lazy expansion + expand-all clamp; beyond safe limits the tree is not attempted — Pretty/Raw fallback with a clear message; virtualization only if SC-201 fails without it |
 | PHP array export escaping bugs | Exhaustive unit fixtures (unicode, quotes, nested, empty, numeric keys) + gated `php -l` validation inside the sandbox |
 | Viewer refactor regresses Phase 1 semantics (transport vs status, truncation badge) | Existing HttpResultView tests kept and extended; FR-202 asserted per view |
 | Example drift as features evolve | Examples validated against the schema in a unit test so CI catches breakage |

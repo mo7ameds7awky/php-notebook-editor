@@ -19,9 +19,12 @@ deliberately deferred until after Phase 1 ships.
 
 > **Status (2026-08-05)**: spec drafted — this slice is now planned as feature
 > [specs/002-usability-polish](../specs/002-usability-polish/spec.md) (spec + plan +
-> tasks), which also folds in guided runtime setup UX and an example notebook
-> library beyond the original output-intelligence list. Implementation not yet
-> started.
+> tasks), which also folds in guided runtime setup UX (links and explanations only —
+> no Docker installer/updater) and an example notebook library (safe
+> public/local/placeholder endpoints, placeholder secrets only) beyond the original
+> output-intelligence list. Friendly error explanations are static deterministic
+> copy, never AI-generated and never body-derived; copy actions are explicit-only
+> and copy exactly what they name. Implementation not yet started.
 
 1. **Rich HTTP result viewer**
    - Response metadata summary: status, method, URL, duration, size, content type,

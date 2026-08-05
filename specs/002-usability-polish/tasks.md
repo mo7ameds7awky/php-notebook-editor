@@ -30,16 +30,20 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
   body)
 - [ ] T004 [P] `src/lib/jsonTree.ts`: `safeParseJson`, `buildTree(value)` returning
   typed nodes (kind, key, preview, childCount/length, depth), plus guard config
-  (initial-depth cap, expand-all node clamp); unit tests covering deep nesting, big
-  arrays, all JSON types, parse failure
-- [ ] T005 [P] `src/lib/phpExport.ts`: `toPhpArray(json)` emitting short-syntax PHP
-  array literals (assoc/list detection, string escaping incl. quotes/backslashes/
-  unicode, ints/floats/bool/null, nested); unit tests with an exported fixture set
-  reused by the gated sandbox check (T007)
-- [ ] T006 [P] `src/lib/httpExplain.ts`: status-code → friendly one-liner map (families
-  4xx/5xx + specific 400/401/403/404/409/422/429/500/502/503/504) and transport-kind
-  explanations; unit tests assert coverage and that text never claims to replace the
-  raw status
+  (hard depth limit, total node-count guard, initial-depth cap, expand-all clamp)
+  and an over-limit signal the viewer maps to a Pretty/Raw fallback with a clear
+  message — the tree is never attempted beyond safe limits; unit tests covering
+  deep nesting, big arrays, all JSON types, parse failure, over-limit signalling
+- [ ] T005 [P] `src/lib/phpExport.ts`: `toPhpArray(json)` accepting JSON objects and
+  arrays ONLY (scalars/invalid input → typed refusal the UI maps to a disabled
+  action), emitting short-syntax PHP array literals (assoc/list detection, string
+  escaping incl. quotes/backslashes/unicode, ints/floats/bool/null, nested); unit
+  tests with an exported fixture set reused by the gated sandbox check (T007)
+- [ ] T006 [P] `src/lib/httpExplain.ts`: static deterministic status-code → friendly
+  one-liner map (families 4xx/5xx + specific 400/401/403/404/409/422/429/500/502/
+  503/504) and transport-kind explanations — keyed on code/kind only, never
+  AI-generated, never derived from or transmitting response bodies; unit tests
+  assert coverage and that text never claims to replace the raw status
 - [ ] T007 `src-tauri/tests/docker_exec.rs`: add `#[ignore]`d test piping each
   `phpExport` fixture through `php -l` in the sandbox → all parse clean (SC-203)
   (depends on T005 fixtures)
@@ -82,10 +86,12 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
 ## Phase 5: User Story 3 - Copy & Export (P3)
 
 - [ ] T016 [US3] `src/components/cells/CopyActions.tsx`: copy raw body / pretty JSON /
-  headers / summary via T008 (disabled states: no body, invalid JSON for
-  JSON-shaped actions; "Copy as PHP array" via T005); clipboard-failure dialog with
-  selectable text; success feedback (transient "Copied" state); component tests
-  (FR-210/212/213/214)
+  headers / summary via T008 — every copy on explicit click only (never auto-copy),
+  copying exactly what the action names with no silent redaction/transformation;
+  "Copy as PHP array" via T005 enabled ONLY for valid JSON object/array bodies
+  (disabled with reason for text/HTML/binary/invalid JSON/scalar/transport-error);
+  clipboard-failure dialog with selectable text; success feedback (transient
+  "Copied" state); component tests (FR-210/212/213/214)
 - [ ] T017 [US3] Node-level copy in `JsonTreeView`: copy value / copy subtree for the
   focused node (keyboard + mouse); component tests (FR-211)
 - [ ] T018 [US3] CHECKPOINT: manual scenarios — every copy shape verified by pasting;
@@ -100,7 +106,8 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
   component tests (FR-215/218)
 - [ ] T020 [US4] Actionable remedies: `dockerNotInstalled` remedy opens the Docker
   Desktop download URL via the opener plugin; window-focus re-probe (guarded,
-  throttled); tests (FR-217)
+  throttled); guidance links and explains only — NO Docker installer/updater/daemon
+  management; tests (FR-217)
 - [ ] T021 [US4] Pull progress per T002 decision: staged progress states in
   `appStore`/banner/card at minimum; streamed percent via the documented event
   channel if adopted (Rust parser unit-tested on captured samples; no payload
@@ -113,8 +120,10 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
 - [ ] T023 [P] [US5] Author `examples/api-testing.pnb.json` (env vars incl. a
   secret-flagged placeholder + several httpbin requests) and
   `examples/php-tour.pnb.json` (output, exception, limits demos); improve
-  `examples/welcome.pnb.json`; add a unit test validating every example against
-  `validateNotebook` (FR-219/221)
+  `examples/welcome.pnb.json`; all examples target safe public/local/placeholder
+  endpoints only — no real tokens, private URLs, or credentials, secrets as dummy
+  placeholders; add a unit test validating every example against `validateNotebook`
+  and asserting no non-placeholder secret values (FR-219/221)
 - [ ] T024 [US5] Home "Examples" section: bundled examples imported as JSON modules;
   choosing one runs the open-a-copy flow (save dialog → `createNew` from template →
   notebook opens); no new capabilities; component tests (FR-220)
@@ -157,7 +166,13 @@ Two-track option: Track A = viewer (US1→US2→US3); Track B = runtime + exampl
 - Responsive rules (Phase 1 T067) bind every new surface: tabs wrap/collapse, tree
   scrolls inside its pane, no fixed dimensions.
 - Logging policy unchanged — copy/export and progress parsing must not introduce the
-  first logging statement.
+  first logging statement; copied content in particular is never logged.
+- Copying is explicit-only: no auto-copy anywhere, and no silent redaction or
+  transformation beyond what an action's label states.
+- Runtime setup guidance stops at links + explanations — no Docker
+  installer/updater/daemon management in this phase.
+- All explanation/notice copy is static deterministic text shipped with the app;
+  nothing AI-generated, nothing derived from response bodies.
 - No notebook schema changes; view mode and tree state are session-only.
 - Phase 3/4 Output Intelligence items remain in `docs/roadmap.md` — do not pull them
   forward.

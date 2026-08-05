@@ -160,6 +160,10 @@ via the open-a-copy flow, and every cell runs successfully (given a healthy runt
   body are disabled.
 - JSON deeper than the guard depth: nodes beyond it load on expand; expand-all warns
   or clamps above a node-count threshold instead of freezing.
+- JSON beyond the hard safety limits (depth or total node count): Tree is not
+  attempted at all — Pretty/Raw fallback with a clear message (FR-208).
+- Scalar-only JSON body (`"ok"`, `42`, `true`): Tree/Pretty render it, but "Copy as
+  PHP array" stays unavailable (FR-212 covers objects/arrays only).
 - Clipboard write fails (webview denies): a dialog shows the content selectable for
   manual copy; the failure is not logged with the content.
 - Huge single-line JSON (minified 2 MB): Pretty and Tree stay responsive or fall back
@@ -180,7 +184,10 @@ Result viewer:
 - **FR-202**: The transport-failure vs HTTP-error-status distinction (Phase 1 FR-021)
   MUST hold in every view and in copied summaries.
 - **FR-203**: Common HTTP error statuses MUST show a one-line friendly explanation
-  that never replaces the raw status or body.
+  that never replaces the raw status or body. Explanations are static, deterministic
+  copy authored in the app, keyed only on the status code or transport error kind —
+  never AI-generated, and never derived from inspecting or transmitting the response
+  body.
 
 View modes:
 
@@ -196,19 +203,27 @@ JSON tree:
   counts / array lengths when collapsed, plus expand-all and collapse-all.
 - **FR-207**: Tree values MUST be visually typed (string/number/boolean/null/object/
   array) using theme tokens only, with indentation guides.
-- **FR-208**: Trees over large or deep bodies MUST stay responsive via a guarded
-  initial depth, lazy expansion, and an expand-all clamp.
+- **FR-208**: Trees over large or deep bodies MUST stay responsive via hard depth
+  limits, node-count guards, lazy expansion, and an expand-all clamp. When parsed
+  JSON exceeds the safe limits, the viewer MUST fall back to Pretty/Raw with a clear
+  message — the UI never freezes attempting to render the tree.
 - **FR-209**: A body that fails JSON parsing MUST fall back to Raw with a
   non-blocking notice — never an error state that hides the response.
 
 Copy/export:
 
 - **FR-210**: Users MUST be able to copy: raw body, pretty-printed JSON, headers (as
-  `Name: value` lines), and a one-line response summary.
+  `Name: value` lines), and a one-line response summary. Every copy happens only on
+  explicit user action — the app never auto-copies — and copies exactly what the
+  action names: no silent redaction, truncation, or transformation unless the action
+  label says so (e.g. "Copy as PHP array" is the transformation).
 - **FR-211**: In the Tree view, users MUST be able to copy a selected node's value or
   its subtree as JSON.
-- **FR-212**: For valid JSON bodies, users MUST be able to copy the body as a PHP
-  array literal (short array syntax, correctly escaped) that parses under `php -l`.
+- **FR-212**: For valid JSON **object or array** bodies — or a selected JSON
+  object/array tree node — users MUST be able to copy the value as a PHP array
+  literal (short array syntax, correctly escaped) that parses under `php -l`. The
+  action MUST be unavailable (disabled, with the reason shown) for plain text, HTML,
+  binary, invalid JSON, scalar-only bodies, and transport errors.
 - **FR-213**: Copy/export actions MUST NOT mutate the notebook document or file.
 - **FR-214**: Copy/export actions MUST NOT log the copied content (logging policy).
 
@@ -220,7 +235,8 @@ Runtime setup:
   minimum, streamed progress where feasible.
 - **FR-217**: Remedies MUST be actionable in-app where possible: open the Docker
   download page via the opener plugin, one-click re-check, and automatic re-probe
-  after a successful pull.
+  after a successful pull. Guidance stops at linking and explaining — Phase 2 does
+  NOT implement any Docker installer, updater, or daemon management.
 - **FR-218**: Setup guidance MUST distinguish a first-run experience (nothing
   installed yet) from a degraded one (was healthy, now isn't).
 
@@ -230,7 +246,9 @@ Examples:
   PHP tour), each valid against the v1 notebook schema.
 - **FR-220**: Examples MUST be openable from the Home screen through an open-a-copy
   flow (save dialog → user-owned file); bundled originals are never written to.
-- **FR-221**: Example env vars MUST contain placeholder values only; secret-flagged
+- **FR-221**: Examples MUST target safe public endpoints (e.g. httpbin.org), local
+  endpoints, or `{{placeholder}}` URLs only — never real tokens, private URLs, or
+  credentials. Example env vars MUST contain placeholder values only; secret-flagged
   examples ship with dummy values and a note to replace them.
 
 ### Key Entities
@@ -268,6 +286,14 @@ Examples:
   pinning, diffing, redaction, advanced previews.
 - No Laravel project mode, no Composer, no host mounts, no network-enabled PHP, no
   cloud/AI/collaboration, no telemetry.
+- No Docker installer/updater/daemon management — runtime setup guidance links and
+  explains only.
+- All viewer copy (explanations, notices, remedies) is static deterministic text
+  shipped with the app; nothing is AI-generated and nothing inspects or transmits
+  response bodies to produce it.
+- Copying is always an explicit user action; the app never writes to the clipboard
+  on its own, and Phase 2 copy actions never silently redact or transform beyond
+  what the action name states.
 - No notebook file schema changes; forward-tolerance rules unchanged.
 - Logging policy unchanged: no bodies, no secrets, no PHP source/output, no notebook
   contents — and still effectively "nothing logs at all".

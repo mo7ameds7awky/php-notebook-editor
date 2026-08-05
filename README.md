@@ -16,14 +16,18 @@ Current milestone:
 
 - [x] Tauri + React app scaffolded
 - [x] Bun selected as package manager/runtime
-- [ ] Notebook file format
-- [ ] Notebook CRUD
-- [ ] Markdown cells
-- [ ] PHP code cells
-- [ ] HTTP request cells
-- [ ] Docker-based PHP execution
-- [ ] Environment variables
+- [x] Notebook file format (versioned `.pnb.json`, atomic saves, conflict detection)
+- [x] Notebook CRUD (create/open/save/save-as + recents)
+- [x] Markdown cells (sanitized preview)
+- [x] PHP code cells (authoring + sandboxed execution)
+- [x] HTTP request cells (run/cancel, timeouts, cURL import)
+- [x] Docker-based PHP execution (no mounts, no network, hard limits, health checks)
+- [x] Environment variables (`{{name}}` interpolation, secret masking, autocomplete)
 - [ ] Local project folder detection
+
+Manual acceptance scenarios for every story live in
+[specs/001-notebook-mvp/quickstart.md](specs/001-notebook-mvp/quickstart.md).
+A ready-made example notebook is at [examples/welcome.pnb.json](examples/welcome.pnb.json).
 
 ---
 
@@ -111,12 +115,11 @@ Keeping the app local-first also improves trust. Developers do not need to uploa
 - **Desktop backend:** Rust through Tauri commands
 - **Styling:** Tailwind CSS v4 over centralized design tokens (`src/theme/`), dark theme only for MVP — see `docs/architecture.md`
 
-### Planned runtime stack
+### Runtime stack
 
-- **PHP execution:** Docker-based PHP container
-- **Notebook storage:** local `.pnb.json` files
-- **Optional storage:** SQLite for app metadata/recent notebooks
-- **Editor:** CodeMirror or Monaco Editor
+- **PHP execution:** Docker-based PHP container (`php:8.4-cli` by default, `PNB_PHP_IMAGE` override)
+- **Notebook storage:** local `.pnb.json` files (recents in a small app-data JSON store)
+- **Editor:** CodeMirror 6
 
 ---
 
@@ -153,7 +156,8 @@ bun install
 bun run tauri dev
 ```
 
-If everything is working, a desktop window should open with the Tauri + React starter UI.
+If everything is working, a desktop window should open on the notebook home screen.
+Try opening [examples/welcome.pnb.json](examples/welcome.pnb.json) from there.
 
 ---
 
@@ -175,6 +179,31 @@ bun run preview
 # Build desktop app
 bun run tauri build
 ```
+
+### Tests and quality gates
+
+```bash
+# Frontend type check
+bun run typecheck
+
+# Frontend lint
+bun run lint
+
+# Frontend unit/component tests (Vitest)
+bun run test
+
+# Rust unit tests
+cd src-tauri && cargo test
+
+# Rust lints
+cd src-tauri && cargo clippy
+
+# Docker integration tests (ignored by default; needs Docker + the PHP image)
+cd src-tauri && cargo test -- --ignored
+```
+
+The full manual validation guide is
+[specs/001-notebook-mvp/quickstart.md](specs/001-notebook-mvp/quickstart.md).
 
 ---
 

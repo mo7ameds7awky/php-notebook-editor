@@ -160,11 +160,11 @@ Each story phase is independently completable and demoable.
 
 **Purpose**: Final verification, examples, docs, gates
 
-- [ ] T055 [P] Create example notebook `examples/welcome.pnb.json` (Markdown intro + PHP hello + HTTP httpbin GET with `{{base_url}}` env var) validating against `specs/001-notebook-mvp/contracts/notebook-file.schema.json`
-- [ ] T056 [P] Update `README.md`: check off delivered milestone items, document test commands (`bun run test`, `cargo test`, `cargo test -- --ignored`, `bun run lint`, `bun run typecheck`), link `specs/001-notebook-mvp/quickstart.md`
+- [x] T055 [P] Create example notebook `examples/welcome.pnb.json` (Markdown intro + PHP hello + HTTP httpbin GET with `{{base_url}}` env var) validating against `specs/001-notebook-mvp/contracts/notebook-file.schema.json`
+- [x] T056 [P] Update `README.md`: check off delivered milestone items, document test commands (`bun run test`, `cargo test`, `cargo test -- --ignored`, `bun run lint`, `bun run typecheck`), link `specs/001-notebook-mvp/quickstart.md`
 - [ ] T057 Full manual acceptance pass: quickstart.md top-to-bottom including Success-criteria spot-check table (SC-001…SC-009)
-- [ ] T058 Gates sweep — all green: `bun run typecheck`, `bun run lint`, `bun run test`, `cd src-tauri && cargo test && cargo clippy` (no new warnings)
-- [ ] T059 Constitution compliance review against plan.md Constitution Check table: audit `src-tauri/capabilities/default.json` still minimal (core/dialog/opener only); grep app code for any in-process PHP execution path (must be none); logging audit — static: `grep -rn 'println!\|eprintln!\|log::\|tracing::\|dbg!' src-tauri/src/` and review every hit (none may reference request/response bodies, headers, PHP source, run output, or env values); dynamic: repeat the T046 secret-grep sweep on a full session capture covering PHP + HTTP runs; brand audit: grep `src/components` + `src/App.tsx` for hardcoded identity/brand values ("PHP Notebook Editor" literal, tagline literal, raw accent hex colors) — all must import from `src/theme` (T060 rule)
+- [x] T058 Gates sweep — all green: `bun run typecheck`, `bun run lint`, `bun run test`, `cd src-tauri && cargo test && cargo clippy` (no new warnings)
+- [x] T059 Constitution compliance review against plan.md Constitution Check table: audit `src-tauri/capabilities/default.json` still minimal (core/dialog/opener only); grep app code for any in-process PHP execution path (must be none); logging audit — static: `grep -rn 'println!\|eprintln!\|log::\|tracing::\|dbg!' src-tauri/src/` and review every hit (none may reference request/response bodies, headers, PHP source, run output, or env values); dynamic: repeat the T046 secret-grep sweep on a full session capture covering PHP + HTTP runs; brand audit: grep `src/components` + `src/App.tsx` for hardcoded identity/brand values ("PHP Notebook Editor" literal, tagline literal, raw accent hex colors) — all must import from `src/theme` (T060 rule)
 
 ---
 

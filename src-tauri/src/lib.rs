@@ -15,7 +15,10 @@ pub fn run() {
             commands::notebook::list_recents,
             commands::notebook::remove_recent,
             commands::run::run_http,
-            commands::run::cancel_run
+            commands::run::cancel_run,
+            commands::runtime::check_php_runtime,
+            commands::runtime::pull_php_image,
+            commands::runtime::run_php
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

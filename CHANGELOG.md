@@ -34,3 +34,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   typing `{{` in the URL or a header value suggests variables with keyboard and
   mouse insertion. Body shows the highlighting preview only — in-editor body
   autocomplete (CodeMirror integration) is a planned follow-up.
+- PHP cell execution in an isolated Docker sandbox (User Story 5): code runs only
+  in `docker run` child processes — never in the app — with no mounts, no network,
+  256 MB memory cap, pid/cpu limits, all capabilities dropped, and a supervised
+  30-second timeout with force-kill and no container debris; typed runtime health
+  probing (Docker missing / daemon stopped / image missing) with per-state
+  remedies, an in-app image pull action, and a health banner; per-cell run/cancel
+  with stdout and errors displayed distinctly, duration, termination cause
+  (time/memory limit), and output truncation flags; PHP source and output are
+  never logged.

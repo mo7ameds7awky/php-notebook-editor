@@ -1,0 +1,32 @@
+[
+  {
+    "name": "flatObject",
+    "json": { "name": "pnb", "count": 3, "active": true, "ratio": 0.5, "nothing": null },
+    "php": "[\n    'name' => 'pnb',\n    'count' => 3,\n    'active' => true,\n    'ratio' => 0.5,\n    'nothing' => null,\n]"
+  },
+  {
+    "name": "list",
+    "json": [1, 2, 3],
+    "php": "[\n    1,\n    2,\n    3,\n]"
+  },
+  {
+    "name": "nested",
+    "json": { "user": { "name": "Ada", "tags": ["a", "b"] }, "empty": {}, "emptyList": [] },
+    "php": "[\n    'user' => [\n        'name' => 'Ada',\n        'tags' => [\n            'a',\n            'b',\n        ],\n    ],\n    'empty' => [],\n    'emptyList' => [],\n]"
+  },
+  {
+    "name": "escaping",
+    "json": { "quote": "it's", "backslash": "a\\b", "unicode": "héllo 🌍", "newline": "a\nb" },
+    "php": "[\n    'quote' => 'it\\'s',\n    'backslash' => 'a\\\\b',\n    'unicode' => 'héllo 🌍',\n    'newline' => 'a\nb',\n]"
+  },
+  {
+    "name": "numericStringKeys",
+    "json": { "0": "zero", "1": "one" },
+    "php": "[\n    '0' => 'zero',\n    '1' => 'one',\n]"
+  },
+  {
+    "name": "mixedDeep",
+    "json": [{ "id": 1, "meta": { "ok": false } }, { "id": 2, "meta": null }],
+    "php": "[\n    [\n        'id' => 1,\n        'meta' => [\n            'ok' => false,\n        ],\n    ],\n    [\n        'id' => 2,\n        'meta' => null,\n    ],\n]"
+  }
+]

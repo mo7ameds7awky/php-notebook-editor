@@ -12,42 +12,46 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
 
 ## Phase 1: Setup & Decisions
 
-- [ ] T001 Clipboard spike: verify `navigator.clipboard.writeText` inside the Tauri
+- [x] T001 Clipboard spike: verify `navigator.clipboard.writeText` inside the Tauri
   webview on macOS (WKWebView) and note Windows/Linux expectations; if denied, adopt
   `tauri-plugin-clipboard-manager` adding ONLY `clipboard-manager:allow-write-text`
   to `src-tauri/capabilities/default.json`; record the decision + rationale in
-  `specs/002-usability-polish/research.md` (constitution re-check either way)
-- [ ] T002 [P] Pull-progress spike: capture `docker pull` stdout samples across a
+  `specs/002-usability-polish/research.md` (constitution re-check either way) —
+  decided for the plugin (research.md D1): webview API unverifiable headless and
+  platform-inconsistent; write-only capability added
+- [x] T002 [P] Pull-progress spike: capture `docker pull` stdout samples across a
   cold and warm pull, decide streamed-percent vs staged progress, record in
   `research.md`; if streamed, document the additive progress event channel in
   `specs/001-notebook-mvp/contracts/ipc-commands.md` per the contract change policy
+  — decided for staged progress with a per-layer counter (research.md D2): non-TTY
+  `docker pull` emits no byte percentages; contract event note lands with T021
 
 ## Phase 2: Foundational (pure logic — blocks all UI stories)
 
-- [ ] T003 [P] `src/lib/responseMeta.ts`: derive size (formatted + bytes), parsed
+- [x] T003 [P] `src/lib/responseMeta.ts`: derive size (formatted + bytes), parsed
   content type, JSON-validity flag from `HttpResponseSummary`; unit tests in
   `responseMeta.test.ts` (charset params, missing content-type, binary summary, empty
   body)
-- [ ] T004 [P] `src/lib/jsonTree.ts`: `safeParseJson`, `buildTree(value)` returning
+- [x] T004 [P] `src/lib/jsonTree.ts`: `safeParseJson`, `buildTree(value)` returning
   typed nodes (kind, key, preview, childCount/length, depth), plus guard config
   (hard depth limit, total node-count guard, initial-depth cap, expand-all clamp)
   and an over-limit signal the viewer maps to a Pretty/Raw fallback with a clear
   message — the tree is never attempted beyond safe limits; unit tests covering
   deep nesting, big arrays, all JSON types, parse failure, over-limit signalling
-- [ ] T005 [P] `src/lib/phpExport.ts`: `toPhpArray(json)` accepting JSON objects and
+- [x] T005 [P] `src/lib/phpExport.ts`: `toPhpArray(json)` accepting JSON objects and
   arrays ONLY (scalars/invalid input → typed refusal the UI maps to a disabled
   action), emitting short-syntax PHP array literals (assoc/list detection, string
   escaping incl. quotes/backslashes/unicode, ints/floats/bool/null, nested); unit
   tests with an exported fixture set reused by the gated sandbox check (T007)
-- [ ] T006 [P] `src/lib/httpExplain.ts`: static deterministic status-code → friendly
+- [x] T006 [P] `src/lib/httpExplain.ts`: static deterministic status-code → friendly
   one-liner map (families 4xx/5xx + specific 400/401/403/404/409/422/429/500/502/
   503/504) and transport-kind explanations — keyed on code/kind only, never
   AI-generated, never derived from or transmitting response bodies; unit tests
   assert coverage and that text never claims to replace the raw status
-- [ ] T007 `src-tauri/tests/docker_exec.rs`: add `#[ignore]`d test piping each
+- [x] T007 `src-tauri/tests/docker_exec.rs`: add `#[ignore]`d test piping each
   `phpExport` fixture through `php -l` in the sandbox → all parse clean (SC-203)
   (depends on T005 fixtures)
-- [ ] T008 `src/lib/clipboard.ts`: `copyText(text)` on the T001 mechanism with a
+- [x] T008 `src/lib/clipboard.ts`: `copyText(text)` on the T001 mechanism with a
   typed failure result (never throws content into logs); unit tests with a mocked
   backend (depends on T001)
 

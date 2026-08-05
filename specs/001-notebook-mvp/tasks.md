@@ -277,7 +277,9 @@ its own spec → plan → tasks cycle when scheduled. Direction, scope rules, an
 acceptance criteria: [docs/roadmap.md](../../docs/roadmap.md); summary in
 spec.md §Future Directions.
 
-Phase 2 — usable MVP output enhancements:
+Phase 2 — usable MVP output enhancements (now specced as
+[specs/002-usability-polish](../002-usability-polish/spec.md) — the list below is
+superseded by that feature's tasks.md):
 
 - Add rich HTTP result viewer (metadata summary: status, method, URL, duration,
   size, content type, timestamp; HTTP-status vs transport-failure distinction)

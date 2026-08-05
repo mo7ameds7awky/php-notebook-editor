@@ -17,6 +17,12 @@ deliberately deferred until after Phase 1 ships.
 
 ### Phase 2 — Usable MVP output enhancements
 
+> **Status (2026-08-05)**: spec drafted — this slice is now planned as feature
+> [specs/002-usability-polish](../specs/002-usability-polish/spec.md) (spec + plan +
+> tasks), which also folds in guided runtime setup UX and an example notebook
+> library beyond the original output-intelligence list. Implementation not yet
+> started.
+
 1. **Rich HTTP result viewer**
    - Response metadata summary: status, method, URL, duration, size, content type,
      timestamp.

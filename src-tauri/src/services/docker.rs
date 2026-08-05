@@ -38,7 +38,8 @@ pub fn container_name(run_id: &str) -> String {
 
 /// The exact sandbox flag set: no mounts, no network, capped memory/cpu/pids,
 /// all capabilities dropped, deterministic name for the kill path. PHP's own
-/// memory_limit is disabled so the container cap is the single authority.
+/// memory_limit is disabled so the container cap is the single authority, and
+/// errors are routed to stderr so they display distinctly from program output.
 pub fn build_run_args(run_id: &str, limits: &PhpRunLimits, image: &str) -> Vec<String> {
     vec![
         "run".into(),
@@ -56,6 +57,8 @@ pub fn build_run_args(run_id: &str, limits: &PhpRunLimits, image: &str) -> Vec<S
         "php".into(),
         "-d".into(),
         "memory_limit=-1".into(),
+        "-d".into(),
+        "display_errors=stderr".into(),
     ]
 }
 
@@ -354,6 +357,8 @@ mod tests {
                 "php",
                 "-d",
                 "memory_limit=-1",
+                "-d",
+                "display_errors=stderr",
             ]
         );
     }

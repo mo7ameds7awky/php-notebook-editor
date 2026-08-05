@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "title": "Welcome to PHP Notebook Editor",
+  "cells": [
+    {
+      "id": "welcome-intro-md",
+      "type": "markdown",
+      "source": "# Welcome 👋\n\nThis notebook shows the three cell types working together.\n\n- **Markdown cells** (like this one) hold explanations and notes — click *Edit* to change them, *Preview* to render.\n- **PHP cells** run real PHP inside an isolated Docker sandbox — no network, no host files, hard time and memory limits.\n- **HTTP cells** send API requests and show the response, with `{{name}}` placeholders resolved from the notebook's environment variables.\n\nOpen the **Environment variables** panel above the cells to see the `base_url` variable the HTTP cell below uses. Everything here is stored in this single `.pnb.json` file — readable, diffable, yours."
+    },
+    {
+      "id": "welcome-hello-php",
+      "type": "php",
+      "source": "<?php\n\n$greeting = \"Hello from the sandbox!\";\n$versions = sprintf(\"PHP %s on %s\", PHP_VERSION, PHP_OS);\n\necho $greeting . PHP_EOL;\necho $versions . PHP_EOL;\n\n// The sandbox has no network and no host filesystem — try it:\nvar_dump(@file_get_contents(\"https://example.com\"));\n"
+    },
+    {
+      "id": "welcome-httpbin-get",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/get?hello=notebook",
+        "headers": [
+          {
+            "name": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": "",
+        "timeoutMs": 30000
+      }
+    }
+  ],
+  "envVars": [
+    {
+      "name": "base_url",
+      "value": "https://httpbin.org",
+      "secret": false
+    }
+  ]
+}

@@ -59,11 +59,11 @@ are independently completable and demoable. Format: `[ID] [P?] [Story] Descripti
 
 ## Phase 3: User Story 1 - Rich HTTP Result Viewer (P1)
 
-- [ ] T009 [US1] Refactor `src/components/cells/HttpResultView.tsx` into the viewer
+- [x] T009 [US1] Refactor `src/components/cells/HttpResultView.tsx` into the viewer
   shell: metadata summary row (status badge, method, authored URL, duration, size,
   content type, timestamp via T003), preserving Phase 1 transport-vs-status rendering
   and truncation badge; extend existing component tests (FR-201/202)
-- [ ] T010 [US1] Friendly explanation line via T006 rendered for error statuses and
+- [x] T010 [US1] Friendly explanation line via T006 rendered for error statuses and
   transport failures; component tests assert raw status/body remain visible
   (FR-203)
 - [ ] T011 [US1] CHECKPOINT: manual scenarios — 200/404/500/timeout/unreachable

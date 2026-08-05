@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { explainHttpStatus, explainTransportFailure } from "./httpExplain";
+import { explainHttpStatus, explainTransportFailure, httpStatusText } from "./httpExplain";
 import { HTTP_ERROR_KINDS } from "../types/notebook";
 
 describe("explainHttpStatus", () => {
@@ -26,6 +26,19 @@ describe("explainHttpStatus", () => {
     for (const code of [400, 404, 500]) {
       expect(explainHttpStatus(code)).not.toMatch(/instead of|replaces/i);
     }
+  });
+});
+
+describe("httpStatusText", () => {
+  it("returns standard reason phrases for common codes", () => {
+    expect(httpStatusText(200)).toBe("OK");
+    expect(httpStatusText(404)).toBe("Not Found");
+    expect(httpStatusText(500)).toBe("Internal Server Error");
+  });
+
+  it("returns null for uncommon codes", () => {
+    expect(httpStatusText(299)).toBeNull();
+    expect(httpStatusText(599)).toBeNull();
   });
 });
 
